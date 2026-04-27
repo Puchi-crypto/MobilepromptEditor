@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Prompt Manager</title>
+  <title>Prompt Manager V8</title>
   <link rel="manifest" href="./manifest.json">
   <meta name="theme-color" content="#0f172a">
 
@@ -14,22 +14,23 @@
   <style>
     :root {
       --bg: #0f172a;
-      --panel: #111827;
-      --panel2: #1f2937;
       --text: #e5e7eb;
       --muted: #94a3b8;
       --border: rgba(148, 163, 184, .18);
       --accent: #38bdf8;
       --accent2: #818cf8;
       --danger: #fb7185;
-      --radius: 18px;
       --shadow: 0 16px 45px rgba(0,0,0,.35);
+      --radius: 18px;
+      --line-height: 1.65;
+      --editor-font-size: 15px;
     }
 
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     body {
       margin: 0;
-      min-height: 100vh;
+      height: 100vh;
+      height: 100dvh;
       background: radial-gradient(circle at top left, #1e293b 0, #0f172a 38%, #020617 100%);
       color: var(--text);
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -38,13 +39,7 @@
     button, input, textarea, select { font: inherit; }
     button { border: 0; color: var(--text); cursor: pointer; }
 
-    .app {
-      height: 100vh;
-      height: 100dvh;
-      display: flex;
-      flex-direction: column;
-    }
-
+    .app { height: 100%; display: flex; flex-direction: column; }
     .topbar {
       min-height: calc(56px + env(safe-area-inset-top));
       padding: env(safe-area-inset-top) 12px 0;
@@ -93,6 +88,7 @@
     .meta-row { display: flex; gap: 8px; }
     .title-input {
       flex: 1;
+      min-width: 0;
       background: rgba(15, 23, 42, .7);
       color: var(--text);
       border: 1px solid var(--border);
@@ -101,11 +97,12 @@
       outline: none;
     }
     .toggle-btn {
-      min-width: 88px;
+      min-width: 68px;
       border-radius: 14px;
       background: linear-gradient(135deg, rgba(56,189,248,.18), rgba(129,140,248,.18));
       border: 1px solid rgba(56,189,248,.25);
       color: #dbeafe;
+      font-size: 13px;
     }
 
     .editor-toolbar {
@@ -136,11 +133,7 @@
     }
     .tool-btn.wide { font-size: clamp(8px, 2.4vw, 11px); letter-spacing: -.04em; }
     .tool-btn:active, .mini-tool-btn:active, .icon-btn:active { transform: scale(.96); background: rgba(56,189,248,.16); }
-    .danger-tool {
-      color: #fecdd3;
-      border-color: rgba(251, 113, 133, .35);
-      background: rgba(251, 113, 133, .12);
-    }
+    .danger-tool { color: #fecdd3; border-color: rgba(251, 113, 133, .35); background: rgba(251, 113, 133, .12); }
 
     .editor-shell {
       flex: 1;
@@ -150,34 +143,116 @@
       background: rgba(2, 6, 23, .72);
       border: 1px solid rgba(148, 163, 184, .16);
       box-shadow: var(--shadow);
+      position: relative;
     }
-    .editor {
+    .pane { height: 100%; min-height: 0; }
+
+    .edit-pane {
+      height: 100%;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 44px 1fr;
+    }
+    .editor-lines {
+      height: 100%;
+      overflow: hidden;
+      padding: 16px 8px 16px 4px;
+      background: rgba(15, 23, 42, .5);
+      border-right: 1px solid rgba(148, 163, 184, .12);
+      color: rgba(148, 163, 184, .58);
+      text-align: right;
+      line-height: var(--line-height);
+      font-size: var(--editor-font-size);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      user-select: none;
+      white-space: pre;
+    }
+
+    /* ==== リアルタイムハイライト用オーバーレイ構造 ==== */
+    .editor-container {
+      position: relative;
       width: 100%;
       height: 100%;
-      resize: none;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .editor, .editor-highlight {
+      margin: 0;
+      padding: 16px;
+      width: 100%;
+      height: 100%;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: var(--editor-font-size);
+      line-height: var(--line-height);
       border: 0;
+      box-sizing: border-box;
+      white-space: pre-wrap;
+      overflow-wrap: break-word;
+      word-break: break-word;
+      tab-size: 4;
+      -moz-tab-size: 4;
+    }
+    .editor-highlight {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      color: #dbeafe; /* デフォルト文字色 */
+      overflow-y: auto;
+      overflow-x: hidden;
+      z-index: 1;
+    }
+    /* ハイライト層のスクロールバーは隠す（textarea側で操作） */
+    .editor-highlight::-webkit-scrollbar { display: none; }
+    .editor-highlight { scrollbar-width: none; -ms-overflow-style: none; }
+
+    .editor {
+      position: absolute;
+      top: 0;
+      left: 0;
+      resize: none;
       outline: none;
       background: transparent;
-      color: #dbeafe;
-      padding: 16px;
-      line-height: 1.65;
-      font-size: 15px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      color: transparent !important; /* 入力文字自体は透明にして背面のハイライトを見せる */
+      caret-color: #dbeafe;          /* カーソルの色は見えるようにする */
+      z-index: 2;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-appearance: none;
+      appearance: none;
     }
-    .preview {
+    .editor::selection {
+      background: rgba(56, 189, 248, 0.35);
+      color: transparent;
+    }
+
+    .preview-pane {
       height: 100%;
       overflow: auto;
       padding: 18px;
       line-height: 1.7;
       word-break: break-word;
     }
-    .preview h1 { font-size: 1.55rem; border-bottom: 1px solid var(--border); padding-bottom: .35em; }
-    .preview h2 { font-size: 1.28rem; }
-    .preview h3 { font-size: 1.1rem; }
-    .preview code { background: rgba(148,163,184,.14); border: 1px solid rgba(148,163,184,.12); padding: .12em .35em; border-radius: 7px; color: #bae6fd; }
-    .preview pre { background: rgba(15,23,42,.95); border: 1px solid rgba(148,163,184,.14); border-radius: 14px; padding: 14px; overflow: auto; }
-    .preview pre code { background: none; border: 0; padding: 0; }
-    .preview blockquote { border-left: 4px solid var(--accent); margin: 1em 0; padding: .2em 0 .2em 1em; color: #cbd5e1; background: rgba(56,189,248,.06); border-radius: 0 12px 12px 0; }
+    .preview-pane h1 { font-size: 1.55rem; border-bottom: 1px solid var(--border); padding-bottom: .35em; }
+    .preview-pane h2 { font-size: 1.28rem; }
+    .preview-pane h3 { font-size: 1.1rem; }
+    .preview-pane code { background: rgba(148,163,184,.14); border: 1px solid rgba(148,163,184,.12); padding: .12em .35em; border-radius: 7px; color: #bae6fd; }
+    .preview-pane pre { background: rgba(15,23,42,.95); border: 1px solid rgba(148,163,184,.14); border-radius: 14px; padding: 14px; overflow: auto; }
+    .preview-pane pre code { background: none; border: 0; padding: 0; }
+    .preview-pane blockquote { border-left: 4px solid var(--accent); margin: 1em 0; padding: .2em 0 .2em 1em; color: #cbd5e1; background: rgba(56,189,248,.06); border-radius: 0 12px 12px 0; }
+
+    /* シンタックスハイライト用の共通クラス */
+    .cv-heading { color: #7dd3fc; font-weight: 800; }
+    .cv-quote { color: #c4b5fd; }
+    .cv-list { color: #86efac; }
+    .cv-code { color: #fbbf24; }
+    .cv-codeblock { color: #fcd34d; }
+    .cv-var { color: #f0abfc; font-weight: 700; }
+    .cv-tag { color: #60a5fa; }
+    .cv-strong { color: #fda4af; font-weight: 800; }
+    .cv-url { color: #67e8f9; text-decoration: underline; }
+    .cv-string { color: #fdba74; }
+    .cv-comment { color: #4ade80; }
 
     .drawer-backdrop, .modal-backdrop {
       position: fixed;
@@ -310,10 +385,7 @@
     <header class="topbar">
       <div class="top-actions"><button class="icon-btn" id="openDrawerBtn">☰</button></div>
       <div class="app-title"><strong>Prompt Manager</strong><span id="saveStatus">保存済み</span></div>
-      <div class="top-actions">
-        <button class="icon-btn" id="newPromptBtn">✎</button>
-        <button class="icon-btn" id="openInsertTemplateBtn">▣</button>
-      </div>
+      <div class="top-actions"><button class="icon-btn" id="newPromptBtn">✎</button><button class="icon-btn" id="openInsertTemplateBtn">▣</button></div>
     </header>
 
     <main class="main">
@@ -321,7 +393,6 @@
         <input id="promptTitle" class="title-input" type="text" placeholder="タイトル未設定" />
         <button id="togglePreviewBtn" class="toggle-btn">Preview</button>
       </div>
-
       <div class="editor-toolbar">
         <div class="tool-grid">
           <button class="tool-btn" data-action="undo">↶</button>
@@ -335,10 +406,15 @@
           <button class="tool-btn wide" data-action="moreTools">その他</button>
         </div>
       </div>
-
       <section class="editor-shell">
-        <textarea id="editor" class="editor" spellcheck="false" placeholder="ここにプロンプトを書きます。Markdown形式で入力できます。"></textarea>
-        <div id="preview" class="preview hidden"></div>
+        <div id="editPane" class="edit-pane pane">
+          <div id="editorLines" class="editor-lines">1</div>
+          <div class="editor-container">
+            <div id="editorHighlight" class="editor-highlight" aria-hidden="true"></div>
+            <textarea id="editor" class="editor" spellcheck="false" placeholder="ここにプロンプトを書きます。Markdown形式で入力できます。"></textarea>
+          </div>
+        </div>
+        <div id="previewPane" class="preview-pane pane hidden"></div>
       </section>
     </main>
   </div>
@@ -349,12 +425,10 @@
     <div class="menu-section">Prompt</div>
     <button class="menu-btn" id="openSavedPromptsBtn"><span>保存したプロンプト<small>作成済みプロンプトを開く・削除</small></span><span>›</span></button>
     <button class="menu-btn" id="downloadTxtBtn"><span>テキストファイル出力<small>現在の本文を .txt で保存</small></span><span>↓</span></button>
-
     <div class="menu-section">Templates</div>
     <button class="menu-btn" id="openPromptTemplateManagerBtn"><span>プロンプトテンプレート管理<small>部品・定型文・タグ・お気に入りを管理</small></span><span>›</span></button>
     <button class="menu-btn" id="openFullTemplateManagerBtn"><span>全体テンプレート管理<small>新規作成時の枠組みを管理</small></span><span>›</span></button>
     <button class="menu-btn" id="openFolderManagerBtn"><span>フォルダ管理<small>登録・削除・並び替え</small></span><span>›</span></button>
-
     <div class="menu-section">Data</div>
     <button class="menu-btn" id="backupBtn"><span>バックアップ作成<small>全データをJSONで保存</small></span><span>⬇</span></button>
     <button class="menu-btn" id="restoreBtn"><span>バックアップ復元<small>JSONファイルから復元</small></span><span>⬆</span></button>
@@ -363,23 +437,14 @@
   </aside>
 
   <div id="modalBackdrop" class="modal-backdrop"></div>
-  <section id="modal" class="modal">
-    <div class="modal-header"><h2 id="modalTitle">Modal</h2><button class="icon-btn" id="closeModalBtn">×</button></div>
-    <div id="modalBody" class="modal-body"></div>
-  </section>
+  <section id="modal" class="modal"><div class="modal-header"><h2 id="modalTitle">Modal</h2><button class="icon-btn" id="closeModalBtn">×</button></div><div id="modalBody" class="modal-body"></div></section>
   <div id="toast" class="toast"></div>
 
   <script>
-    const STORAGE_KEY = 'promptManagerMobile.v4';
-    const OLD_KEYS = ['promptManagerMobile.v3', 'promptManagerMobile.v2', 'promptManagerMobile.v1'];
-
-    function uid() {
-      return 'id_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
-    }
-
-    function clone(obj) {
-      return JSON.parse(JSON.stringify(obj));
-    }
+    const STORAGE_KEY = 'promptManagerMobile.v8';
+    const OLD_KEYS = ['promptManagerMobile.v5', 'promptManagerMobile.v4', 'promptManagerMobile.v3', 'promptManagerMobile.v2', 'promptManagerMobile.v1'];
+    function uid() { return 'id_' + Math.random().toString(36).slice(2) + Date.now().toString(36); }
+    function clone(obj) { return JSON.parse(JSON.stringify(obj)); }
 
     const defaultData = {
       currentPromptId: null,
@@ -392,13 +457,11 @@
       promptTemplates: [],
       fullTemplates: []
     };
-
     defaultData.promptTemplates = [
       { id: uid(), folderId: defaultData.folders[0].id, title: '入力変数ブロック', body: '<Inputs>\n{$ここに入力内容}\n</Inputs>', tags: ['基本', '変数'], favorite: true, useCount: 0, lastUsedAt: null, order: 1 },
       { id: uid(), folderId: defaultData.folders[0].id, title: '出力形式指定', body: '<Output Format>\n- Markdown\n- 必要に応じて表を使う\n- 最後に確認事項をまとめる\n</Output Format>', tags: ['基本', '出力'], favorite: false, useCount: 0, lastUsedAt: null, order: 2 },
       { id: uid(), folderId: defaultData.folders[1].id, title: '専門家ロール', body: 'あなたは実務経験20年以上の企業法務・税務に精通した専門家です。制度の背景、根拠、リスク、代替案を含めて説明してください。', tags: ['税務', '法務', 'ロール'], favorite: true, useCount: 0, lastUsedAt: null, order: 3 }
     ];
-
     defaultData.fullTemplates = [
       { id: uid(), title: '標準プロンプト', body: '# 目的\n\n\n# 入力\n\n\n# 条件\n- \n- \n\n# 出力形式\n- Markdown\n', order: 1 },
       { id: uid(), title: '調査・整理用', body: '# 調査テーマ\n\n\n# 前提条件\n\n\n# 調査してほしいこと\n1. \n2. \n3. \n\n# 注意点\n- 根拠を明示する\n- 不明点は不明と書く\n', order: 2 }
@@ -409,23 +472,26 @@
     let redoStack = [];
     let saveTimer = null;
     let historyTimer = null;
-    let previewMode = false;
+    let mode = 'edit';
 
     const $ = (id) => document.getElementById(id);
     const editor = $('editor');
-    const preview = $('preview');
+    const editorHighlight = $('editorHighlight');
+    const editorLines = $('editorLines');
+    const editPane = $('editPane');
+    const previewPane = $('previewPane');
     const promptTitle = $('promptTitle');
     const saveStatus = $('saveStatus');
 
     init();
 
     function init() {
-      if (!data.currentPromptId || !data.prompts.find(p => p.id === data.currentPromptId)) {
-        createPrompt('無題のプロンプト', '', false);
-      }
+      if (!data.currentPromptId || !data.prompts.find(p => p.id === data.currentPromptId)) createPrompt('無題のプロンプト', '', false);
       loadCurrentPromptToEditor();
       bindEvents();
       pushHistory();
+      updateEditorLineNumbers();
+      updateEditorHighlight();
       updatePreview();
       persist();
     }
@@ -437,7 +503,7 @@
       $('modalBackdrop').addEventListener('click', closeModal);
       $('newPromptBtn').addEventListener('click', openNewPromptModal);
       $('openInsertTemplateBtn').addEventListener('click', openInsertTemplateModal);
-      $('togglePreviewBtn').addEventListener('click', togglePreview);
+      $('togglePreviewBtn').addEventListener('click', togglePreviewMode);
       $('openSavedPromptsBtn').addEventListener('click', () => { closeDrawer(); openSavedPromptsModal(); });
       $('downloadTxtBtn').addEventListener('click', () => { closeDrawer(); downloadTextFile(); });
       $('openPromptTemplateManagerBtn').addEventListener('click', () => { closeDrawer(); openPromptTemplateManager(); });
@@ -448,7 +514,12 @@
       $('restoreInput').addEventListener('change', restoreData);
       $('resetSampleBtn').addEventListener('click', () => { closeDrawer(); resetSamples(); });
       document.querySelectorAll('[data-action]').forEach(btn => btn.addEventListener('click', () => handleTool(btn.dataset.action)));
-      editor.addEventListener('input', () => { markSaving(); debounceSave(); debounceHistory(); updatePreview(); });
+      
+      editor.addEventListener('input', () => { 
+        markSaving(); debounceSave(); debounceHistory(); 
+        updateEditorLineNumbers(); updateEditorHighlight(); 
+      });
+      editor.addEventListener('scroll', syncEditorScroll);
       promptTitle.addEventListener('input', () => { markSaving(); debounceSave(); });
       window.addEventListener('beforeunload', saveCurrentPrompt);
     }
@@ -463,25 +534,20 @@
           ...clone(defaultData),
           ...parsed,
           prompts: parsed.prompts || [],
-          folders: parsed.folders?.length ? parsed.folders : clone(defaultData.folders),
-          promptTemplates: parsed.promptTemplates?.length ? parsed.promptTemplates : clone(defaultData.promptTemplates),
-          fullTemplates: parsed.fullTemplates?.length ? parsed.fullTemplates : clone(defaultData.fullTemplates)
+          folders: parsed.folders && parsed.folders.length ? parsed.folders : clone(defaultData.folders),
+          promptTemplates: parsed.promptTemplates && parsed.promptTemplates.length ? parsed.promptTemplates : clone(defaultData.promptTemplates),
+          fullTemplates: parsed.fullTemplates && parsed.fullTemplates.length ? parsed.fullTemplates : clone(defaultData.fullTemplates)
         });
       } catch (error) {
         console.error(error);
         return normalizeLoadedData(clone(defaultData));
       }
     }
-
     function normalizeLoadedData(appData) {
-      appData.folders = (appData.folders || []).map((folder, index) => ({
-        id: folder.id || uid(),
-        name: folder.name || '名称未設定',
-        order: folder.order || index + 1
-      }));
+      appData.folders = (appData.folders || []).map((folder, index) => ({ id: folder.id || uid(), name: folder.name || '名称未設定', order: folder.order || index + 1 }));
       appData.promptTemplates = (appData.promptTemplates || []).map((tpl, index) => ({
         id: tpl.id || uid(),
-        folderId: tpl.folderId || appData.folders[0]?.id,
+        folderId: tpl.folderId || (appData.folders[0] ? appData.folders[0].id : ''),
         title: tpl.title || '無題テンプレート',
         body: tpl.body || '',
         tags: Array.isArray(tpl.tags) ? tpl.tags : parseTags(tpl.tags || ''),
@@ -490,49 +556,31 @@
         lastUsedAt: tpl.lastUsedAt || null,
         order: tpl.order || index + 1
       }));
-      appData.fullTemplates = (appData.fullTemplates || []).map((tpl, index) => ({
-        id: tpl.id || uid(),
-        title: tpl.title || '無題テンプレート',
-        body: tpl.body || '',
-        order: tpl.order || index + 1
-      }));
+      appData.fullTemplates = (appData.fullTemplates || []).map((tpl, index) => ({ id: tpl.id || uid(), title: tpl.title || '無題テンプレート', body: tpl.body || '', order: tpl.order || index + 1 }));
       normalizeOrders(appData.folders);
       normalizeOrders(appData.promptTemplates);
       normalizeOrders(appData.fullTemplates);
       return appData;
     }
 
-    function persist() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-      saveStatus.textContent = '保存済み';
-    }
-
-    function getCurrentPrompt() {
-      return data.prompts.find(prompt => prompt.id === data.currentPromptId);
-    }
-
+    function persist() { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); saveStatus.textContent = '保存済み'; }
+    function getCurrentPrompt() { return data.prompts.find(prompt => prompt.id === data.currentPromptId); }
     function createPrompt(title, body, persistNow = true) {
-      const prompt = {
-        id: uid(),
-        title: title || '無題のプロンプト',
-        body: body || '',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
+      const prompt = { id: uid(), title: title || '無題のプロンプト', body: body || '', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
       data.prompts.unshift(prompt);
       data.currentPromptId = prompt.id;
       if (persistNow) persist();
       return prompt;
     }
-
     function loadCurrentPromptToEditor() {
       const current = getCurrentPrompt();
       if (!current) return;
       promptTitle.value = current.title || '';
       editor.value = current.body || '';
       saveStatus.textContent = '保存済み';
+      updateEditorLineNumbers();
+      updateEditorHighlight();
     }
-
     function saveCurrentPrompt() {
       const current = getCurrentPrompt();
       if (!current) return;
@@ -541,21 +589,9 @@
       current.updatedAt = new Date().toISOString();
       persist();
     }
-
-    function markSaving() {
-      saveStatus.textContent = '編集中...';
-    }
-
-    function debounceSave() {
-      clearTimeout(saveTimer);
-      saveTimer = setTimeout(saveCurrentPrompt, 350);
-    }
-
-    function debounceHistory() {
-      clearTimeout(historyTimer);
-      historyTimer = setTimeout(pushHistory, 420);
-    }
-
+    function markSaving() { saveStatus.textContent = '編集中...'; }
+    function debounceSave() { clearTimeout(saveTimer); saveTimer = setTimeout(saveCurrentPrompt, 350); }
+    function debounceHistory() { clearTimeout(historyTimer); historyTimer = setTimeout(pushHistory, 420); }
     function pushHistory() {
       const value = editor.value;
       if (historyStack[historyStack.length - 1] !== value) {
@@ -564,30 +600,136 @@
         redoStack = [];
       }
     }
-
-    function openDrawer() {
-      $('drawerBackdrop').classList.add('show');
-      $('drawer').classList.add('show');
+    function commitHistoryBeforeUndoRedo() {
+      clearTimeout(historyTimer);
+      const currentValue = editor.value;
+      if (historyStack[historyStack.length - 1] !== currentValue) {
+        historyStack.push(currentValue);
+        if (historyStack.length > 80) historyStack.shift();
+      }
+    }
+    function undo() {
+      commitHistoryBeforeUndoRedo();
+      if (historyStack.length <= 1) return;
+      redoStack.push(historyStack.pop());
+      editor.value = historyStack[historyStack.length - 1];
+      editor.focus();
+      editor.selectionStart = editor.selectionEnd = editor.value.length;
+      updateEditorLineNumbers();
+      updateEditorHighlight();
+      markSaving();
+      debounceSave();
+    }
+    function redo() {
+      clearTimeout(historyTimer);
+      if (!redoStack.length) return;
+      const value = redoStack.pop();
+      if (historyStack[historyStack.length - 1] !== value) {
+        historyStack.push(value);
+        if (historyStack.length > 80) historyStack.shift();
+      }
+      editor.value = value;
+      editor.focus();
+      editor.selectionStart = editor.selectionEnd = editor.value.length;
+      updateEditorLineNumbers();
+      updateEditorHighlight();
+      markSaving();
+      debounceSave();
     }
 
-    function closeDrawer() {
-      $('drawerBackdrop').classList.remove('show');
-      $('drawer').classList.remove('show');
+    function updateEditorLineNumbers() {
+      const lineCount = Math.max(1, (editor.value.match(/\n/g) || []).length + 1);
+      let nums = '';
+      for (let i = 1; i <= lineCount; i++) nums += i + '\n';
+      editorLines.textContent = nums;
+      syncEditorScroll();
+    }
+    function syncEditorScroll() { 
+      editorLines.scrollTop = editor.scrollTop;
+      if (editorHighlight) {
+        editorHighlight.scrollTop = editor.scrollTop;
+        editorHighlight.scrollLeft = editor.scrollLeft;
+      }
     }
 
-    function openModal(title, html) {
-      $('modalTitle').textContent = title;
-      $('modalBody').innerHTML = html;
-      $('modalBackdrop').classList.add('show');
-      $('modal').classList.add('show');
+    // ==== 入力中のリアルタイム・シンタックスハイライト ====
+    function updateEditorHighlight() {
+      if (!editorHighlight) return;
+      editorHighlight.innerHTML = applyHighlight(editor.value);
+    }
+    function applyHighlight(text) {
+      if (!text) return '';
+      // HTMLエスケープ処理
+      let escaped = String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      
+      const lines = escaped.split('\n');
+      let inCodeBlock = false;
+
+      const highlighted = lines.map(line => {
+        let hlLine = line;
+        const trimmed = line.trimStart();
+
+        // コードブロックの切り替え
+        if (trimmed.startsWith('```')) {
+          inCodeBlock = !inCodeBlock;
+          return '<span class="cv-codeblock">' + line + '</span>';
+        }
+
+        // 変数タグ（共通適用）
+        hlLine = hlLine.replace(/\{\$.*?\}/g, match => '<span class="cv-var">' + match + '</span>');
+        // 文字列・クォート（共通適用）
+        hlLine = hlLine.replace(/(&quot;.*?&quot;|&#39;.*?&#39;)/g, '<span class="cv-string">$1</span>');
+        // キーワード類（共通適用）
+        hlLine = hlLine.replace(/\b(import|from|def|class|return|if|else|elif|for|while|in|and|or|not|True|False|None|function|const|let|var|await|async|try|catch|new)\b/g, '<span class="cv-tag">$1</span>');
+
+        if (inCodeBlock) {
+          // コードブロック内は # をコメントとして扱う
+          hlLine = hlLine.replace(/(^|\s)(#|\/\/)(.*)$/, '$1<span class="cv-comment">$2$3</span>');
+        } else {
+          // コードブロック外はMarkdown寄りの解釈
+          if (trimmed.startsWith('#')) {
+            return '<span class="cv-heading">' + hlLine + '</span>'; // 見出し
+          }
+          if (trimmed.startsWith('&gt;')) {
+            return '<span class="cv-quote">' + hlLine + '</span>';   // 引用
+          }
+          if (trimmed.startsWith('- ') || trimmed.startsWith('* ') || /^\d+\.\s/.test(trimmed)) {
+            hlLine = hlLine.replace(/^(\s*[-*]\s|\s*\d+\.\s)/, '<span class="cv-list">$1</span>'); // リスト
+          }
+          // Markdown装飾
+          hlLine = hlLine.replace(/`([^`]+)`/g, '<span class="cv-code">`$1`</span>');
+          hlLine = hlLine.replace(/\*\*([^\*]+)\*\*/g, '<span class="cv-strong">**$1**</span>');
+          hlLine = hlLine.replace(/(https?:\/\/[^\s]+)/g, '<span class="cv-url">$1</span>');
+          // ブロック外の // コメント
+          hlLine = hlLine.replace(/(^|\s)(\/\/)(.*)$/, '$1<span class="cv-comment">$2$3</span>');
+        }
+        
+        return hlLine;
+      });
+
+      let html = highlighted.join('\n');
+      // テキストエリアの末尾改行に表示上の空行を合わせるためのスペース追加
+      if (text.endsWith('\n')) html += '\n ';
+      return html;
     }
 
-    function closeModal() {
-      $('modalBackdrop').classList.remove('show');
-      $('modal').classList.remove('show');
-      setTimeout(() => { $('modalBody').innerHTML = ''; }, 220);
+    function setMode(nextMode) {
+      mode = nextMode;
+      editPane.classList.toggle('hidden', mode !== 'edit');
+      previewPane.classList.toggle('hidden', mode !== 'preview');
+      $('togglePreviewBtn').textContent = mode === 'preview' ? 'Edit' : 'Preview';
+      if (mode === 'edit') setTimeout(() => editor.focus(), 0);
+    }
+    function togglePreviewMode() {
+      if (mode === 'preview') { setMode('edit'); return; }
+      updatePreview();
+      setMode('preview');
     }
 
+    function openDrawer() { $('drawerBackdrop').classList.add('show'); $('drawer').classList.add('show'); }
+    function closeDrawer() { $('drawerBackdrop').classList.remove('show'); $('drawer').classList.remove('show'); }
+    function openModal(title, html) { $('modalTitle').textContent = title; $('modalBody').innerHTML = html; $('modalBackdrop').classList.add('show'); $('modal').classList.add('show'); }
+    function closeModal() { $('modalBackdrop').classList.remove('show'); $('modal').classList.remove('show'); setTimeout(() => { $('modalBody').innerHTML = ''; }, 220); }
     function toast(message) {
       const toastEl = $('toast');
       toastEl.textContent = message;
@@ -597,10 +739,7 @@
     }
 
     function handleTool(action) {
-      if (previewMode && !['copy', 'save'].includes(action)) {
-        toast('編集するにはEdit表示に戻してください');
-        return;
-      }
+      if (mode !== 'edit' && !['copy', 'save'].includes(action)) { toast('編集するにはEdit表示に戻してください'); return; }
       switch (action) {
         case 'undo': undo(); break;
         case 'redo': redo(); break;
@@ -614,7 +753,7 @@
         case 'variable': insertAtCursor('{$変数名}'); break;
         case 'section': insertAtCursor('\n\n---\n\n'); break;
         case 'link': insertLink(); break;
-        case 'codeBlock': insertAtCursor('\n```markdown\n\n```\n'); break;
+        case 'codeBlock': insertAtCursor('\n```python\n\n```\n'); break;
         case 'checklist': insertAtCursor('- [ ] 項目1\n- [ ] 項目2\n'); break;
         case 'table': insertAtCursor('| 項目 | 内容 |\n|---|---|\n| 例 | ここに入力 |\n'); break;
         case 'dateTime': insertDateTime(); break;
@@ -624,24 +763,6 @@
         case 'moreTools': openMoreToolsModal(); break;
       }
     }
-
-    function undo() {
-      if (historyStack.length <= 1) return;
-      redoStack.push(historyStack.pop());
-      editor.value = historyStack[historyStack.length - 1];
-      updatePreview();
-      debounceSave();
-    }
-
-    function redo() {
-      if (!redoStack.length) return;
-      const value = redoStack.pop();
-      historyStack.push(value);
-      editor.value = value;
-      updatePreview();
-      debounceSave();
-    }
-
     function insertAtCursor(text) {
       const start = editor.selectionStart;
       const end = editor.selectionEnd;
@@ -650,7 +771,6 @@
       editor.selectionStart = editor.selectionEnd = start + text.length;
       afterEdit();
     }
-
     function wrapSelection(before, after, placeholder) {
       const start = editor.selectionStart;
       const end = editor.selectionEnd;
@@ -662,7 +782,6 @@
       editor.selectionEnd = start + before.length + selected.length;
       afterEdit();
     }
-
     function insertLinePrefix(prefix) {
       const start = editor.selectionStart;
       const value = editor.value;
@@ -672,7 +791,6 @@
       editor.selectionStart = editor.selectionEnd = start + prefix.length;
       afterEdit();
     }
-
     function insertLink() {
       const start = editor.selectionStart;
       const end = editor.selectionEnd;
@@ -684,7 +802,6 @@
       editor.selectionEnd = start + text.length;
       afterEdit();
     }
-
     function insertDateTime() {
       const now = new Date();
       const y = now.getFullYear();
@@ -694,52 +811,19 @@
       const mm = String(now.getMinutes()).padStart(2, '0');
       insertAtCursor(y + '-' + m + '-' + d + ' ' + hh + ':' + mm);
     }
-
     function clearEditorText() {
-      if (!editor.value.trim()) {
-        toast('本文はすでに空です');
-        return;
-      }
-      if (!confirm('現在入力している本文を削除しますか？')) {
-        return;
-      }
+      if (!editor.value.trim()) { toast('本文はすでに空です'); return; }
+      if (!confirm('現在入力している本文を削除しますか？')) return;
       editor.value = '';
       editor.focus();
       afterEdit();
       toast('本文を削除しました');
     }
-
-    function afterEdit() {
-      markSaving();
-      pushHistory();
-      updatePreview();
-      debounceSave();
+    function afterEdit() { 
+      markSaving(); pushHistory(); updateEditorLineNumbers(); updateEditorHighlight(); debounceSave(); 
     }
 
-    function togglePreview() {
-      previewMode = !previewMode;
-      if (previewMode) {
-        updatePreview();
-        editor.classList.add('hidden');
-        preview.classList.remove('hidden');
-        $('togglePreviewBtn').textContent = 'Edit';
-      } else {
-        preview.classList.add('hidden');
-        editor.classList.remove('hidden');
-        $('togglePreviewBtn').textContent = 'Preview';
-        setTimeout(() => editor.focus(), 0);
-      }
-    }
-
-    function escapeHtml(str) {
-      return String(str)
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#039;');
-    }
-
+    function escapeHtml(str) { return String(str).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;'); }
     function markdownToHtml(md) {
       let html = escapeHtml(md);
       html = html.replace(/```([\s\S]*?)```/g, function(_, code) { return '<pre><code>' + code.trim() + '</code></pre>'; });
@@ -752,49 +836,21 @@
       html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
       return html.split('\n').map(function(line) {
         if (!line.trim()) return '';
-        if (/^<h|^<blockquote|^<pre|^<ul|^<ol/.test(line)) return line;
+        if (/^<h|^<blockquote|^<pre/.test(line)) return line;
         if (/^- /.test(line)) return '<p>• ' + line.replace(/^- /, '') + '</p>';
         if (/^\d+\. /.test(line)) return '<p>' + line + '</p>';
         return '<p>' + line + '</p>';
       }).join('\n');
     }
-
-    function updatePreview() {
-      preview.innerHTML = markdownToHtml(editor.value || '');
-    }
+    function updatePreview() { previewPane.innerHTML = markdownToHtml(editor.value || ''); }
 
     function openMoreToolsModal() {
-      openModal('その他の編集ツール', `
-        <div class="tools-grid">
-          <button class="mini-tool-btn" data-extra-tool="italic"><i>I</i></button>
-          <button class="mini-tool-btn" data-extra-tool="number">1.</button>
-          <button class="mini-tool-btn" data-extra-tool="quote">”</button>
-          <button class="mini-tool-btn" data-extra-tool="variable">{ }</button>
-          <button class="mini-tool-btn" data-extra-tool="section">区切り</button>
-          <button class="mini-tool-btn" data-extra-tool="link">リンク</button>
-          <button class="mini-tool-btn" data-extra-tool="codeBlock">コード枠</button>
-          <button class="mini-tool-btn" data-extra-tool="checklist">チェック</button>
-          <button class="mini-tool-btn" data-extra-tool="table">表</button>
-          <button class="mini-tool-btn" data-extra-tool="dateTime">日時</button>
-          <button class="mini-tool-btn" data-extra-tool="save">保存</button>
-        </div>
-      `);
-      document.querySelectorAll('[data-extra-tool]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const action = btn.dataset.extraTool;
-          closeModal();
-          setTimeout(() => handleTool(action), 240);
-        });
-      });
+      openModal('その他の編集ツール', `<div class="tools-grid"><button class="mini-tool-btn" data-extra-tool="italic"><i>I</i></button><button class="mini-tool-btn" data-extra-tool="number">1.</button><button class="mini-tool-btn" data-extra-tool="quote">”</button><button class="mini-tool-btn" data-extra-tool="variable">{ }</button><button class="mini-tool-btn" data-extra-tool="section">区切り</button><button class="mini-tool-btn" data-extra-tool="link">リンク</button><button class="mini-tool-btn" data-extra-tool="codeBlock">コード枠</button><button class="mini-tool-btn" data-extra-tool="checklist">チェック</button><button class="mini-tool-btn" data-extra-tool="table">表</button><button class="mini-tool-btn" data-extra-tool="dateTime">日時</button><button class="mini-tool-btn" data-extra-tool="save">保存</button></div>`);
+      document.querySelectorAll('[data-extra-tool]').forEach(btn => btn.addEventListener('click', () => { const action = btn.dataset.extraTool; closeModal(); setTimeout(() => handleTool(action), 240); }));
     }
-
     function openNewPromptModal() {
       const options = data.fullTemplates.sort((a,b) => a.order - b.order).map(t => '<option value="' + t.id + '">' + escapeHtml(t.title) + '</option>').join('');
-      openModal('新規作成', `
-        <div class="field"><label>タイトル</label><input id="newPromptTitle" type="text" placeholder="新しいプロンプト" /></div>
-        <div class="field"><label>全体テンプレート</label><select id="newFullTemplate"><option value="">空白で作成</option>${options}</select></div>
-        <button class="primary-btn" id="createNewPromptConfirm">作成する</button>
-      `);
+      openModal('新規作成', `<div class="field"><label>タイトル</label><input id="newPromptTitle" type="text" placeholder="新しいプロンプト" /></div><div class="field"><label>全体テンプレート</label><select id="newFullTemplate"><option value="">空白で作成</option>${options}</select></div><button class="primary-btn" id="createNewPromptConfirm">作成する</button>`);
       $('createNewPromptConfirm').addEventListener('click', () => {
         saveCurrentPrompt();
         const title = $('newPromptTitle').value.trim() || '無題のプロンプト';
@@ -804,49 +860,23 @@
         historyStack = [];
         redoStack = [];
         pushHistory();
-        updatePreview();
+        setMode('edit');
         closeModal();
         toast('新規作成しました');
       });
     }
-
     function openInsertTemplateModal() {
-      openModal('テンプレート挿入', `
-        <div class="tab-row">
-          <button class="tab-btn active" data-insert-view="favorites">お気に入り</button>
-          <button class="tab-btn" data-insert-view="recent">最近使った</button>
-          <button class="tab-btn" data-insert-view="popular">使用回数順</button>
-          <button class="tab-btn" data-insert-view="folders">フォルダ別</button>
-          <button class="tab-btn" data-insert-view="tags">タグ別</button>
-          <button class="tab-btn" data-insert-view="all">すべて</button>
-        </div>
-        <div class="manager-toolbar three">
-          <input id="insertTemplateSearch" placeholder="テンプレート検索" />
-          <select id="insertFolderFilter"><option value="">全フォルダ</option>${folderOptionsHtml()}</select>
-          <select id="insertTagFilter"><option value="">全タグ</option>${tagOptionsHtml()}</select>
-        </div>
-        <div id="insertTemplateList"></div>
-      `);
+      openModal('テンプレート挿入', `<div class="tab-row"><button class="tab-btn active" data-insert-view="favorites">お気に入り</button><button class="tab-btn" data-insert-view="recent">最近使った</button><button class="tab-btn" data-insert-view="popular">使用回数順</button><button class="tab-btn" data-insert-view="folders">フォルダ別</button><button class="tab-btn" data-insert-view="tags">タグ別</button><button class="tab-btn" data-insert-view="all">すべて</button></div><div class="manager-toolbar three"><input id="insertTemplateSearch" placeholder="テンプレート検索" /><select id="insertFolderFilter"><option value="">全フォルダ</option>${folderOptionsHtml()}</select><select id="insertTagFilter"><option value="">全タグ</option>${tagOptionsHtml()}</select></div><div id="insertTemplateList"></div>`);
       let view = 'favorites';
       const render = () => renderInsertTemplateList(view);
-      document.querySelectorAll('[data-insert-view]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          view = btn.dataset.insertView;
-          document.querySelectorAll('[data-insert-view]').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          render();
-        });
-      });
-      ['insertTemplateSearch', 'insertFolderFilter', 'insertTagFilter'].forEach(id => {
-        $(id).addEventListener(id === 'insertTemplateSearch' ? 'input' : 'change', render);
-      });
+      document.querySelectorAll('[data-insert-view]').forEach(btn => btn.addEventListener('click', () => { view = btn.dataset.insertView; document.querySelectorAll('[data-insert-view]').forEach(b => b.classList.remove('active')); btn.classList.add('active'); render(); }));
+      ['insertTemplateSearch', 'insertFolderFilter', 'insertTagFilter'].forEach(id => { $(id).addEventListener(id === 'insertTemplateSearch' ? 'input' : 'change', render); });
       render();
     }
-
     function renderInsertTemplateList(view) {
-      const q = ($('insertTemplateSearch')?.value || '').trim().toLowerCase();
-      const folderId = $('insertFolderFilter')?.value || '';
-      const tag = $('insertTagFilter')?.value || '';
+      const q = ($('insertTemplateSearch') ? $('insertTemplateSearch').value : '').trim().toLowerCase();
+      const folderId = $('insertFolderFilter') ? $('insertFolderFilter').value : '';
+      const tag = $('insertTagFilter') ? $('insertTagFilter').value : '';
       const templates = filteredPromptTemplates(q, folderId, tag);
       let html = '';
       if (view === 'favorites') html = sortTemplates(templates.filter(t => t.favorite), 'recent').map(insertTemplateCard).join('');
@@ -855,37 +885,15 @@
       else if (view === 'all') html = sortTemplates(templates, 'title').map(insertTemplateCard).join('');
       else if (view === 'tags') {
         const tags = tag ? [tag] : getAllPromptTemplateTags();
-        html = tags.map(tagName => {
-          const list = sortTemplates(templates.filter(t => (t.tags || []).includes(tagName)), 'recent');
-          if (!list.length) return '';
-          return accordionBlock('#' + tagName, list.length, list.map(insertTemplateCard).join(''));
-        }).join('');
+        html = tags.map(tagName => { const list = sortTemplates(templates.filter(t => (t.tags || []).includes(tagName)), 'recent'); return list.length ? accordionBlock('#' + tagName, list.length, list.map(insertTemplateCard).join('')) : ''; }).join('');
       } else {
-        html = [...data.folders].sort((a,b) => a.order - b.order).filter(f => !folderId || f.id === folderId).map(folder => {
-          const list = sortTemplates(templates.filter(t => t.folderId === folder.id), 'order');
-          if (!list.length) return '';
-          return accordionBlock(folder.name, list.length, list.map(insertTemplateCard).join(''));
-        }).join('');
+        html = [...data.folders].sort((a,b) => a.order - b.order).filter(f => !folderId || f.id === folderId).map(folder => { const list = sortTemplates(templates.filter(t => t.folderId === folder.id), 'order'); return list.length ? accordionBlock(folder.name, list.length, list.map(insertTemplateCard).join('')) : ''; }).join('');
       }
       $('insertTemplateList').innerHTML = html || '<div class="empty">該当するテンプレートはありません。</div>';
       bindAccordionOnly();
       bindInsertTemplateActions(() => renderInsertTemplateList(view));
     }
-
-    function insertTemplateCard(t) {
-      return `
-        <div class="card">
-          <h3>${t.favorite ? '★ ' : ''}${escapeHtml(t.title)}</h3>
-          <p>${escapeHtml(t.body)}</p>
-          ${templateMetaHtml(t)}
-          <div class="card-actions">
-            <button class="mini-btn" data-insert-template="${t.id}">挿入</button>
-            <button class="mini-btn" data-toggle-favorite="${t.id}">${t.favorite ? '★解除' : '☆お気に入り'}</button>
-          </div>
-        </div>
-      `;
-    }
-
+    function insertTemplateCard(t) { return `<div class="card"><h3>${t.favorite ? '★ ' : ''}${escapeHtml(t.title)}</h3><p>${escapeHtml(t.body)}</p>${templateMetaHtml(t)}<div class="card-actions"><button class="mini-btn" data-insert-template="${t.id}">挿入</button><button class="mini-btn" data-toggle-favorite="${t.id}">${t.favorite ? '★解除' : '☆お気に入り'}</button></div></div>`; }
     function bindInsertTemplateActions(render) {
       document.querySelectorAll('[data-insert-template]').forEach(btn => btn.addEventListener('click', () => {
         const template = data.promptTemplates.find(t => t.id === btn.dataset.insertTemplate);
@@ -894,103 +902,36 @@
         template.lastUsedAt = new Date().toISOString();
         persist();
         closeModal();
-        if (previewMode) togglePreview();
+        setMode('edit');
         insertAtCursor(template.body);
         toast('テンプレートを挿入しました');
       }));
-      document.querySelectorAll('[data-toggle-favorite]').forEach(btn => btn.addEventListener('click', () => {
-        const template = data.promptTemplates.find(t => t.id === btn.dataset.toggleFavorite);
-        if (!template) return;
-        template.favorite = !template.favorite;
-        persist();
-        render();
-      }));
+      document.querySelectorAll('[data-toggle-favorite]').forEach(btn => btn.addEventListener('click', () => { const template = data.promptTemplates.find(t => t.id === btn.dataset.toggleFavorite); if (!template) return; template.favorite = !template.favorite; persist(); render(); }));
     }
 
     function openSavedPromptsModal() {
-      const html = data.prompts.map(p => `
-        <div class="card">
-          <h3>${escapeHtml(p.title)}</h3>
-          <p>${escapeHtml(p.body || '本文なし')}</p>
-          <div class="card-actions">
-            <button class="mini-btn" data-open-prompt="${p.id}">開く</button>
-            <button class="mini-btn" data-edit-prompt="${p.id}">編集</button>
-            <button class="mini-btn danger" data-delete-prompt="${p.id}">削除</button>
-          </div>
-        </div>
-      `).join('') || '<div class="empty">保存済みプロンプトはありません。</div>';
+      const html = data.prompts.map(p => `<div class="card"><h3>${escapeHtml(p.title)}</h3><p>${escapeHtml(p.body || '本文なし')}</p><div class="card-actions"><button class="mini-btn" data-open-prompt="${p.id}">開く</button><button class="mini-btn" data-edit-prompt="${p.id}">編集</button><button class="mini-btn danger" data-delete-prompt="${p.id}">削除</button></div></div>`).join('') || '<div class="empty">保存済みプロンプトはありません。</div>';
       openModal('保存したプロンプト', html);
-      document.querySelectorAll('[data-open-prompt]').forEach(btn => btn.addEventListener('click', () => {
-        saveCurrentPrompt();
-        data.currentPromptId = btn.dataset.openPrompt;
-        persist();
-        loadCurrentPromptToEditor();
-        historyStack = [];
-        redoStack = [];
-        pushHistory();
-        updatePreview();
-        closeModal();
-        toast('開きました');
-      }));
+      document.querySelectorAll('[data-open-prompt]').forEach(btn => btn.addEventListener('click', () => { saveCurrentPrompt(); data.currentPromptId = btn.dataset.openPrompt; persist(); loadCurrentPromptToEditor(); historyStack = []; redoStack = []; pushHistory(); setMode('edit'); closeModal(); toast('開きました'); }));
       document.querySelectorAll('[data-edit-prompt]').forEach(btn => btn.addEventListener('click', () => editSavedPrompt(btn.dataset.editPrompt)));
       document.querySelectorAll('[data-delete-prompt]').forEach(btn => btn.addEventListener('click', () => deleteSavedPrompt(btn.dataset.deletePrompt)));
     }
-
     function editSavedPrompt(id) {
       const p = data.prompts.find(x => x.id === id);
       if (!p) return;
-      openModal('プロンプト情報の編集', `
-        <div class="field"><label>タイトル</label><input id="editPromptTitle" value="${escapeHtml(p.title)}" /></div>
-        <div class="field"><label>本文</label><textarea id="editPromptBody">${escapeHtml(p.body || '')}</textarea></div>
-        <button class="primary-btn" id="savePromptEditBtn">保存する</button>
-      `);
-      $('savePromptEditBtn').addEventListener('click', () => {
-        p.title = $('editPromptTitle').value.trim() || '無題のプロンプト';
-        p.body = $('editPromptBody').value;
-        p.updatedAt = new Date().toISOString();
-        persist();
-        if (p.id === data.currentPromptId) loadCurrentPromptToEditor();
-        openSavedPromptsModal();
-        toast('編集しました');
-      });
+      openModal('プロンプト情報の編集', `<div class="field"><label>タイトル</label><input id="editPromptTitle" value="${escapeHtml(p.title)}" /></div><div class="field"><label>本文</label><textarea id="editPromptBody">${escapeHtml(p.body || '')}</textarea></div><button class="primary-btn" id="savePromptEditBtn">保存する</button>`);
+      $('savePromptEditBtn').addEventListener('click', () => { p.title = $('editPromptTitle').value.trim() || '無題のプロンプト'; p.body = $('editPromptBody').value; p.updatedAt = new Date().toISOString(); persist(); if (p.id === data.currentPromptId) loadCurrentPromptToEditor(); openSavedPromptsModal(); toast('編集しました'); });
     }
-
     function deleteSavedPrompt(id) {
       if (!confirm('このプロンプトを削除しますか？')) return;
       data.prompts = data.prompts.filter(p => p.id !== id);
       if (!data.prompts.length) createPrompt('無題のプロンプト', '', false);
       if (!data.prompts.find(p => p.id === data.currentPromptId)) data.currentPromptId = data.prompts[0].id;
-      persist();
-      loadCurrentPromptToEditor();
-      openSavedPromptsModal();
-      toast('削除しました');
+      persist(); loadCurrentPromptToEditor(); openSavedPromptsModal(); toast('削除しました');
     }
 
     function openPromptTemplateManager() {
-      openModal('プロンプトテンプレート管理', `
-        <div class="field"><label>タイトル</label><input id="ptTitle" placeholder="例：専門家ロール" /></div>
-        <div class="field"><label>フォルダ</label><select id="ptFolder">${folderOptionsHtml()}</select></div>
-        <div class="field"><label>タグ</label><input id="ptTags" placeholder="例：税務, 要約, メール" /></div>
-        <div class="field"><label>本文</label><textarea id="ptBody" placeholder="挿入したい単語・定型文"></textarea></div>
-        <button class="primary-btn" id="addPromptTemplateBtn">登録する</button>
-        <hr style="border-color: rgba(148,163,184,.14); margin: 18px 0;">
-        <div class="manager-toolbar three">
-          <input id="templateSearch" placeholder="テンプレート検索" />
-          <select id="templateFolderFilter"><option value="">全フォルダ</option>${folderOptionsHtml()}</select>
-          <select id="templateTagFilter"><option value="">全タグ</option>${tagOptionsHtml()}</select>
-        </div>
-        <div class="manager-toolbar">
-          <select id="templateSort">
-            <option value="folder">フォルダ別</option>
-            <option value="favorite">お気に入り優先</option>
-            <option value="recent">最近使った順</option>
-            <option value="popular">使用回数順</option>
-            <option value="title">タイトル順</option>
-          </select>
-          <button class="secondary-btn" id="openMoveFolderUiBtn" style="margin-top:0;">フォルダ移動UI</button>
-        </div>
-        <div id="promptTemplateList"></div>
-      `);
+      openModal('プロンプトテンプレート管理', `<div class="field"><label>タイトル</label><input id="ptTitle" placeholder="例：専門家ロール" /></div><div class="field"><label>フォルダ</label><select id="ptFolder">${folderOptionsHtml()}</select></div><div class="field"><label>タグ</label><input id="ptTags" placeholder="例：税務, 要約, メール" /></div><div class="field"><label>本文</label><textarea id="ptBody" placeholder="挿入したい単語・定型文"></textarea></div><button class="primary-btn" id="addPromptTemplateBtn">登録する</button><hr style="border-color: rgba(148,163,184,.14); margin: 18px 0;"><div class="manager-toolbar three"><input id="templateSearch" placeholder="テンプレート検索" /><select id="templateFolderFilter"><option value="">全フォルダ</option>${folderOptionsHtml()}</select><select id="templateTagFilter"><option value="">全タグ</option>${tagOptionsHtml()}</select></div><div class="manager-toolbar"><select id="templateSort"><option value="folder">フォルダ別</option><option value="favorite">お気に入り優先</option><option value="recent">最近使った順</option><option value="popular">使用回数順</option><option value="title">タイトル順</option></select><button class="secondary-btn" id="openMoveFolderUiBtn" style="margin-top:0;">フォルダ移動UI</button></div><div id="promptTemplateList"></div>`);
       const render = () => renderPromptTemplateManagerList();
       $('addPromptTemplateBtn').addEventListener('click', () => {
         const title = $('ptTitle').value.trim();
@@ -999,406 +940,88 @@
         const tags = parseTags($('ptTags').value);
         if (!title || !body.trim()) return toast('タイトルと本文を入力してください');
         data.promptTemplates.push({ id: uid(), title, body, folderId, tags, favorite: false, useCount: 0, lastUsedAt: null, order: nextOrder(data.promptTemplates) });
-        persist();
-        $('ptTitle').value = '';
-        $('ptBody').value = '';
-        $('ptTags').value = '';
-        render();
-        toast('登録しました');
+        persist(); $('ptTitle').value = ''; $('ptBody').value = ''; $('ptTags').value = ''; render(); toast('登録しました');
       });
       ['templateSearch', 'templateFolderFilter', 'templateTagFilter', 'templateSort'].forEach(id => $(id).addEventListener(id === 'templateSearch' ? 'input' : 'change', render));
       $('openMoveFolderUiBtn').addEventListener('click', openTemplateFolderMoveUi);
       render();
     }
-
     function renderPromptTemplateManagerList() {
-      const q = ($('templateSearch')?.value || '').trim().toLowerCase();
-      const folderId = $('templateFolderFilter')?.value || '';
-      const tag = $('templateTagFilter')?.value || '';
-      const sort = $('templateSort')?.value || 'folder';
+      const q = ($('templateSearch') ? $('templateSearch').value : '').trim().toLowerCase();
+      const folderId = $('templateFolderFilter') ? $('templateFolderFilter').value : '';
+      const tag = $('templateTagFilter') ? $('templateTagFilter').value : '';
+      const sort = $('templateSort') ? $('templateSort').value : 'folder';
       const templates = filteredPromptTemplates(q, folderId, tag);
       let html = '';
-      if (sort === 'folder') {
-        html = [...data.folders].sort((a,b) => a.order - b.order).filter(f => !folderId || f.id === folderId).map(folder => {
-          const list = sortTemplates(templates.filter(t => t.folderId === folder.id), 'order');
-          if (!list.length) return '';
-          return accordionBlock(folder.name, list.length, list.map(managerTemplateCard).join(''));
-        }).join('');
-      } else {
-        html = sortTemplates(templates, sort).map(managerTemplateCard).join('');
-      }
+      if (sort === 'folder') html = [...data.folders].sort((a,b) => a.order - b.order).filter(f => !folderId || f.id === folderId).map(folder => { const list = sortTemplates(templates.filter(t => t.folderId === folder.id), 'order'); return list.length ? accordionBlock(folder.name, list.length, list.map(managerTemplateCard).join('')) : ''; }).join('');
+      else html = sortTemplates(templates, sort).map(managerTemplateCard).join('');
       $('promptTemplateList').innerHTML = html || '<div class="empty">該当するテンプレートはありません。</div>';
-      bindAccordionOnly();
-      bindPromptTemplateManagerActions();
+      bindAccordionOnly(); bindPromptTemplateManagerActions();
     }
-
-    function managerTemplateCard(t) {
-      return `
-        <div class="card">
-          <h3>${t.favorite ? '★ ' : ''}${escapeHtml(t.title)}</h3>
-          <p>${escapeHtml(t.body)}</p>
-          ${templateMetaHtml(t)}
-          <div class="card-actions">
-            <button class="mini-btn" data-toggle-template-fav="${t.id}">${t.favorite ? '★解除' : '☆お気に入り'}</button>
-            <button class="mini-btn" data-edit-template="${t.id}">編集</button>
-            <button class="mini-btn" data-copy-template="${t.id}">複製</button>
-          </div>
-          <div class="card-actions">
-            <button class="mini-btn" data-move-template="${t.id}" data-dir="up">上へ</button>
-            <button class="mini-btn" data-move-template="${t.id}" data-dir="down">下へ</button>
-            <button class="mini-btn danger" data-delete-template="${t.id}">削除</button>
-          </div>
-        </div>`;
-    }
-
+    function managerTemplateCard(t) { return `<div class="card"><h3>${t.favorite ? '★ ' : ''}${escapeHtml(t.title)}</h3><p>${escapeHtml(t.body)}</p>${templateMetaHtml(t)}<div class="card-actions"><button class="mini-btn" data-toggle-template-fav="${t.id}">${t.favorite ? '★解除' : '☆お気に入り'}</button><button class="mini-btn" data-edit-template="${t.id}">編集</button><button class="mini-btn" data-copy-template="${t.id}">複製</button></div><div class="card-actions"><button class="mini-btn" data-move-template="${t.id}" data-dir="up">上へ</button><button class="mini-btn" data-move-template="${t.id}" data-dir="down">下へ</button><button class="mini-btn danger" data-delete-template="${t.id}">削除</button></div></div>`; }
     function bindPromptTemplateManagerActions() {
-      document.querySelectorAll('[data-toggle-template-fav]').forEach(btn => btn.addEventListener('click', () => {
-        const t = getPromptTemplate(btn.dataset.toggleTemplateFav);
-        if (!t) return;
-        t.favorite = !t.favorite;
-        persist();
-        renderPromptTemplateManagerList();
-      }));
+      document.querySelectorAll('[data-toggle-template-fav]').forEach(btn => btn.addEventListener('click', () => { const t = getPromptTemplate(btn.dataset.toggleTemplateFav); if (!t) return; t.favorite = !t.favorite; persist(); renderPromptTemplateManagerList(); }));
       document.querySelectorAll('[data-edit-template]').forEach(btn => btn.addEventListener('click', () => openEditPromptTemplate(btn.dataset.editTemplate)));
       document.querySelectorAll('[data-copy-template]').forEach(btn => btn.addEventListener('click', () => duplicatePromptTemplate(btn.dataset.copyTemplate)));
       document.querySelectorAll('[data-delete-template]').forEach(btn => btn.addEventListener('click', () => deletePromptTemplate(btn.dataset.deleteTemplate)));
-      document.querySelectorAll('[data-move-template]').forEach(btn => btn.addEventListener('click', () => {
-        moveItem(data.promptTemplates, btn.dataset.moveTemplate, btn.dataset.dir);
-        persist();
-        renderPromptTemplateManagerList();
-      }));
+      document.querySelectorAll('[data-move-template]').forEach(btn => btn.addEventListener('click', () => { moveItem(data.promptTemplates, btn.dataset.moveTemplate, btn.dataset.dir); persist(); renderPromptTemplateManagerList(); }));
     }
-
     function openEditPromptTemplate(id) {
       const t = getPromptTemplate(id);
       if (!t) return;
-      openModal('テンプレート編集', `
-        <div class="field"><label>タイトル</label><input id="editTemplateTitle" value="${escapeHtml(t.title)}" /></div>
-        <div class="field"><label>フォルダ</label><select id="editTemplateFolder">${folderOptionsHtml(t.folderId)}</select></div>
-        <div class="field"><label>タグ</label><input id="editTemplateTags" value="${escapeHtml((t.tags || []).join(', '))}" /></div>
-        <div class="field"><label>本文</label><textarea id="editTemplateBody">${escapeHtml(t.body)}</textarea></div>
-        <button class="primary-btn" id="saveTemplateEditBtn">保存する</button>
-      `);
-      $('saveTemplateEditBtn').addEventListener('click', () => {
-        t.title = $('editTemplateTitle').value.trim() || '無題テンプレート';
-        t.folderId = $('editTemplateFolder').value;
-        t.tags = parseTags($('editTemplateTags').value);
-        t.body = $('editTemplateBody').value;
-        persist();
-        openPromptTemplateManager();
-        toast('編集しました');
-      });
+      openModal('テンプレート編集', `<div class="field"><label>タイトル</label><input id="editTemplateTitle" value="${escapeHtml(t.title)}" /></div><div class="field"><label>フォルダ</label><select id="editTemplateFolder">${folderOptionsHtml(t.folderId)}</select></div><div class="field"><label>タグ</label><input id="editTemplateTags" value="${escapeHtml((t.tags || []).join(', '))}" /></div><div class="field"><label>本文</label><textarea id="editTemplateBody">${escapeHtml(t.body)}</textarea></div><button class="primary-btn" id="saveTemplateEditBtn">保存する</button>`);
+      $('saveTemplateEditBtn').addEventListener('click', () => { t.title = $('editTemplateTitle').value.trim() || '無題テンプレート'; t.folderId = $('editTemplateFolder').value; t.tags = parseTags($('editTemplateTags').value); t.body = $('editTemplateBody').value; persist(); openPromptTemplateManager(); toast('編集しました'); });
     }
-
-    function duplicatePromptTemplate(id) {
-      const t = getPromptTemplate(id);
-      if (!t) return;
-      data.promptTemplates.push({ ...clone(t), id: uid(), title: t.title + ' のコピー', favorite: false, useCount: 0, lastUsedAt: null, order: nextOrder(data.promptTemplates) });
-      persist();
-      renderPromptTemplateManagerList();
-      toast('複製しました');
-    }
-
-    function deletePromptTemplate(id) {
-      if (!confirm('削除しますか？')) return;
-      data.promptTemplates = data.promptTemplates.filter(t => t.id !== id);
-      normalizeOrders(data.promptTemplates);
-      persist();
-      renderPromptTemplateManagerList();
-      toast('削除しました');
-    }
-
+    function duplicatePromptTemplate(id) { const t = getPromptTemplate(id); if (!t) return; data.promptTemplates.push({ ...clone(t), id: uid(), title: t.title + ' のコピー', favorite: false, useCount: 0, lastUsedAt: null, order: nextOrder(data.promptTemplates) }); persist(); renderPromptTemplateManagerList(); toast('複製しました'); }
+    function deletePromptTemplate(id) { if (!confirm('削除しますか？')) return; data.promptTemplates = data.promptTemplates.filter(t => t.id !== id); normalizeOrders(data.promptTemplates); persist(); renderPromptTemplateManagerList(); toast('削除しました'); }
     function openTemplateFolderMoveUi() {
-      openModal('フォルダ移動専用UI', `
-        <div class="manager-toolbar"><input id="moveTemplateSearch" placeholder="移動するテンプレートを検索" /><select id="moveTargetFolder">${folderOptionsHtml()}</select></div>
-        <p class="muted-note">移動したいテンプレートにチェックを入れて、移動先フォルダを選びます。複数選択できます。</p>
-        <div id="moveTemplateList"></div>
-        <button class="primary-btn" id="moveSelectedTemplatesBtn">選択したテンプレートを移動</button>
-      `);
-      const render = () => {
-        const q = ($('moveTemplateSearch')?.value || '').trim().toLowerCase();
-        const list = filteredPromptTemplates(q, '', '');
-        $('moveTemplateList').innerHTML = list.map(t => `
-          <label class="card">
-            <div style="display:flex;gap:8px;align-items:flex-start;"><input type="checkbox" data-move-check="${t.id}" style="width:auto;margin-top:4px;"><div><h3>${escapeHtml(t.title)}</h3>${templateMetaHtml(t)}</div></div>
-          </label>
-        `).join('') || '<div class="empty">該当するテンプレートはありません。</div>';
-      };
+      openModal('フォルダ移動専用UI', `<div class="manager-toolbar"><input id="moveTemplateSearch" placeholder="移動するテンプレートを検索" /><select id="moveTargetFolder">${folderOptionsHtml()}</select></div><p class="muted-note">移動したいテンプレートにチェックを入れて、移動先フォルダを選びます。複数選択できます。</p><div id="moveTemplateList"></div><button class="primary-btn" id="moveSelectedTemplatesBtn">選択したテンプレートを移動</button>`);
+      const render = () => { const q = ($('moveTemplateSearch') ? $('moveTemplateSearch').value : '').trim().toLowerCase(); const list = filteredPromptTemplates(q, '', ''); $('moveTemplateList').innerHTML = list.map(t => `<label class="card"><div style="display:flex;gap:8px;align-items:flex-start;"><input type="checkbox" data-move-check="${t.id}" style="width:auto;margin-top:4px;"><div><h3>${escapeHtml(t.title)}</h3>${templateMetaHtml(t)}</div></div></label>`).join('') || '<div class="empty">該当するテンプレートはありません。</div>'; };
       $('moveTemplateSearch').addEventListener('input', render);
-      $('moveSelectedTemplatesBtn').addEventListener('click', () => {
-        const ids = [...document.querySelectorAll('[data-move-check]:checked')].map(x => x.dataset.moveCheck);
-        if (!ids.length) return toast('移動するテンプレートを選択してください');
-        const target = $('moveTargetFolder').value;
-        data.promptTemplates.forEach(t => { if (ids.includes(t.id)) t.folderId = target; });
-        persist();
-        openPromptTemplateManager();
-        toast(ids.length + '件を移動しました');
-      });
+      $('moveSelectedTemplatesBtn').addEventListener('click', () => { const ids = [...document.querySelectorAll('[data-move-check]:checked')].map(x => x.dataset.moveCheck); if (!ids.length) return toast('移動するテンプレートを選択してください'); const target = $('moveTargetFolder').value; data.promptTemplates.forEach(t => { if (ids.includes(t.id)) t.folderId = target; }); persist(); openPromptTemplateManager(); toast(ids.length + '件を移動しました'); });
       render();
     }
-
     function openFullTemplateManager() {
-      const list = data.fullTemplates.sort((a,b) => a.order - b.order).map(t => `
-        <div class="card"><h3>${escapeHtml(t.title)}</h3><p>${escapeHtml(t.body)}</p>
-          <div class="card-actions"><button class="mini-btn" data-edit-full="${t.id}">編集</button><button class="mini-btn" data-move-full="${t.id}" data-dir="up">上へ</button><button class="mini-btn" data-move-full="${t.id}" data-dir="down">下へ</button><button class="mini-btn danger" data-delete-full="${t.id}">削除</button></div>
-        </div>`).join('');
-      openModal('全体テンプレート管理', `
-        <div class="field"><label>タイトル</label><input id="ftTitle" placeholder="例：標準プロンプト" /></div>
-        <div class="field"><label>本文</label><textarea id="ftBody" placeholder="新規作成時に本文へ入る枠組み"></textarea></div>
-        <button class="primary-btn" id="addFullTemplateBtn">登録する</button>
-        <hr style="border-color: rgba(148,163,184,.14); margin: 18px 0;">
-        ${list || '<div class="empty">全体テンプレートはありません。</div>'}
-      `);
-      $('addFullTemplateBtn').addEventListener('click', () => {
-        const title = $('ftTitle').value.trim();
-        const body = $('ftBody').value;
-        if (!title || !body.trim()) return toast('タイトルと本文を入力してください');
-        data.fullTemplates.push({ id: uid(), title, body, order: nextOrder(data.fullTemplates) });
-        persist();
-        openFullTemplateManager();
-        toast('登録しました');
-      });
+      const list = data.fullTemplates.sort((a,b) => a.order - b.order).map(t => `<div class="card"><h3>${escapeHtml(t.title)}</h3><p>${escapeHtml(t.body)}</p><div class="card-actions"><button class="mini-btn" data-edit-full="${t.id}">編集</button><button class="mini-btn" data-move-full="${t.id}" data-dir="up">上へ</button><button class="mini-btn" data-move-full="${t.id}" data-dir="down">下へ</button><button class="mini-btn danger" data-delete-full="${t.id}">削除</button></div></div>`).join('');
+      openModal('全体テンプレート管理', `<div class="field"><label>タイトル</label><input id="ftTitle" placeholder="例：標準プロンプト" /></div><div class="field"><label>本文</label><textarea id="ftBody" placeholder="新規作成時に本文へ入る枠組み"></textarea></div><button class="primary-btn" id="addFullTemplateBtn">登録する</button><hr style="border-color: rgba(148,163,184,.14); margin: 18px 0;">${list || '<div class="empty">全体テンプレートはありません。</div>'}`);
+      $('addFullTemplateBtn').addEventListener('click', () => { const title = $('ftTitle').value.trim(); const body = $('ftBody').value; if (!title || !body.trim()) return toast('タイトルと本文を入力してください'); data.fullTemplates.push({ id: uid(), title, body, order: nextOrder(data.fullTemplates) }); persist(); openFullTemplateManager(); toast('登録しました'); });
       document.querySelectorAll('[data-edit-full]').forEach(btn => btn.addEventListener('click', () => editFullTemplate(btn.dataset.editFull)));
-      document.querySelectorAll('[data-delete-full]').forEach(btn => btn.addEventListener('click', () => {
-        if (!confirm('削除しますか？')) return;
-        data.fullTemplates = data.fullTemplates.filter(t => t.id !== btn.dataset.deleteFull);
-        normalizeOrders(data.fullTemplates);
-        persist();
-        openFullTemplateManager();
-      }));
-      document.querySelectorAll('[data-move-full]').forEach(btn => btn.addEventListener('click', () => {
-        moveItem(data.fullTemplates, btn.dataset.moveFull, btn.dataset.dir);
-        persist();
-        openFullTemplateManager();
-      }));
+      document.querySelectorAll('[data-delete-full]').forEach(btn => btn.addEventListener('click', () => { if (!confirm('削除しますか？')) return; data.fullTemplates = data.fullTemplates.filter(t => t.id !== btn.dataset.deleteFull); normalizeOrders(data.fullTemplates); persist(); openFullTemplateManager(); }));
+      document.querySelectorAll('[data-move-full]').forEach(btn => btn.addEventListener('click', () => { moveItem(data.fullTemplates, btn.dataset.moveFull, btn.dataset.dir); persist(); openFullTemplateManager(); }));
     }
-
-    function editFullTemplate(id) {
-      const t = data.fullTemplates.find(x => x.id === id);
-      if (!t) return;
-      openModal('全体テンプレート編集', `
-        <div class="field"><label>タイトル</label><input id="editFullTitle" value="${escapeHtml(t.title)}" /></div>
-        <div class="field"><label>本文</label><textarea id="editFullBody">${escapeHtml(t.body)}</textarea></div>
-        <button class="primary-btn" id="saveFullEditBtn">保存する</button>
-      `);
-      $('saveFullEditBtn').addEventListener('click', () => {
-        t.title = $('editFullTitle').value.trim() || '無題テンプレート';
-        t.body = $('editFullBody').value;
-        persist();
-        openFullTemplateManager();
-        toast('編集しました');
-      });
-    }
-
+    function editFullTemplate(id) { const t = data.fullTemplates.find(x => x.id === id); if (!t) return; openModal('全体テンプレート編集', `<div class="field"><label>タイトル</label><input id="editFullTitle" value="${escapeHtml(t.title)}" /></div><div class="field"><label>本文</label><textarea id="editFullBody">${escapeHtml(t.body)}</textarea></div><button class="primary-btn" id="saveFullEditBtn">保存する</button>`); $('saveFullEditBtn').addEventListener('click', () => { t.title = $('editFullTitle').value.trim() || '無題テンプレート'; t.body = $('editFullBody').value; persist(); openFullTemplateManager(); toast('編集しました'); }); }
     function openFolderManager() {
-      const list = data.folders.sort((a,b) => a.order - b.order).map(f => `
-        <div class="card"><h3>${escapeHtml(f.name)}</h3><p>${data.promptTemplates.filter(t => t.folderId === f.id).length}件のテンプレート</p>
-          <div class="card-actions"><button class="mini-btn" data-edit-folder="${f.id}">編集</button><button class="mini-btn" data-move-folder="${f.id}" data-dir="up">上へ</button><button class="mini-btn" data-move-folder="${f.id}" data-dir="down">下へ</button><button class="mini-btn danger" data-delete-folder="${f.id}">削除</button></div>
-        </div>`).join('');
-      openModal('フォルダ管理', `
-        <div class="field"><label>フォルダ名</label><input id="folderName" placeholder="例：メール作成" /></div>
-        <button class="primary-btn" id="addFolderBtn">登録する</button>
-        <hr style="border-color: rgba(148,163,184,.14); margin: 18px 0;">
-        ${list || '<div class="empty">フォルダはありません。</div>'}
-      `);
-      $('addFolderBtn').addEventListener('click', () => {
-        const name = $('folderName').value.trim();
-        if (!name) return toast('フォルダ名を入力してください');
-        data.folders.push({ id: uid(), name, order: nextOrder(data.folders) });
-        persist();
-        openFolderManager();
-        toast('登録しました');
-      });
+      const list = data.folders.sort((a,b) => a.order - b.order).map(f => `<div class="card"><h3>${escapeHtml(f.name)}</h3><p>${data.promptTemplates.filter(t => t.folderId === f.id).length}件のテンプレート</p><div class="card-actions"><button class="mini-btn" data-edit-folder="${f.id}">編集</button><button class="mini-btn" data-move-folder="${f.id}" data-dir="up">上へ</button><button class="mini-btn" data-move-folder="${f.id}" data-dir="down">下へ</button><button class="mini-btn danger" data-delete-folder="${f.id}">削除</button></div></div>`).join('');
+      openModal('フォルダ管理', `<div class="field"><label>フォルダ名</label><input id="folderName" placeholder="例：メール作成" /></div><button class="primary-btn" id="addFolderBtn">登録する</button><hr style="border-color: rgba(148,163,184,.14); margin: 18px 0;">${list || '<div class="empty">フォルダはありません。</div>'}`);
+      $('addFolderBtn').addEventListener('click', () => { const name = $('folderName').value.trim(); if (!name) return toast('フォルダ名を入力してください'); data.folders.push({ id: uid(), name, order: nextOrder(data.folders) }); persist(); openFolderManager(); toast('登録しました'); });
       document.querySelectorAll('[data-edit-folder]').forEach(btn => btn.addEventListener('click', () => editFolder(btn.dataset.editFolder)));
       document.querySelectorAll('[data-delete-folder]').forEach(btn => btn.addEventListener('click', () => deleteFolder(btn.dataset.deleteFolder)));
-      document.querySelectorAll('[data-move-folder]').forEach(btn => btn.addEventListener('click', () => {
-        moveItem(data.folders, btn.dataset.moveFolder, btn.dataset.dir);
-        persist();
-        openFolderManager();
-      }));
+      document.querySelectorAll('[data-move-folder]').forEach(btn => btn.addEventListener('click', () => { moveItem(data.folders, btn.dataset.moveFolder, btn.dataset.dir); persist(); openFolderManager(); }));
     }
+    function editFolder(id) { const f = data.folders.find(x => x.id === id); if (!f) return; openModal('フォルダ編集', `<div class="field"><label>フォルダ名</label><input id="editFolderName" value="${escapeHtml(f.name)}" /></div><button class="primary-btn" id="saveFolderEditBtn">保存する</button>`); $('saveFolderEditBtn').addEventListener('click', () => { f.name = $('editFolderName').value.trim() || '名称未設定'; persist(); openFolderManager(); toast('編集しました'); }); }
+    function deleteFolder(id) { const used = data.promptTemplates.some(t => t.folderId === id); if (used) return toast('使用中のフォルダは削除できません'); if (!confirm('このフォルダを削除しますか？')) return; data.folders = data.folders.filter(f => f.id !== id); normalizeOrders(data.folders); persist(); openFolderManager(); }
 
-    function editFolder(id) {
-      const f = data.folders.find(x => x.id === id);
-      if (!f) return;
-      openModal('フォルダ編集', `
-        <div class="field"><label>フォルダ名</label><input id="editFolderName" value="${escapeHtml(f.name)}" /></div>
-        <button class="primary-btn" id="saveFolderEditBtn">保存する</button>
-      `);
-      $('saveFolderEditBtn').addEventListener('click', () => {
-        f.name = $('editFolderName').value.trim() || '名称未設定';
-        persist();
-        openFolderManager();
-        toast('編集しました');
-      });
-    }
+    function filteredPromptTemplates(q, folderId, tag) { return data.promptTemplates.filter(t => !folderId || t.folderId === folderId).filter(t => !tag || (t.tags || []).includes(tag)).filter(t => !q || (t.title + '\n' + t.body + '\n' + (t.tags || []).join(' ')).toLowerCase().includes(q)); }
+    function getPromptTemplate(id) { return data.promptTemplates.find(t => t.id === id); }
+    function parseTags(value) { return String(value || '').split(/[、,\s]+/).map(x => x.trim().replace(/^#/, '')).filter(Boolean).filter((x, index, arr) => arr.indexOf(x) === index); }
+    function getAllPromptTemplateTags() { return [...new Set(data.promptTemplates.flatMap(t => t.tags || []))].sort((a,b) => a.localeCompare(b, 'ja')); }
+    function folderOptionsHtml(selectedId = '') { return data.folders.sort((a,b) => a.order - b.order).map(f => '<option value="' + f.id + '" ' + (f.id === selectedId ? 'selected' : '') + '>' + escapeHtml(f.name) + '</option>').join(''); }
+    function tagOptionsHtml(selectedTag = '') { return getAllPromptTemplateTags().map(tag => '<option value="' + escapeHtml(tag) + '" ' + (tag === selectedTag ? 'selected' : '') + '>#' + escapeHtml(tag) + '</option>').join(''); }
+    function templateMetaHtml(t) { const folder = data.folders.find(f => f.id === t.folderId); const tags = (t.tags || []).map(tag => '<span class="chip">#' + escapeHtml(tag) + '</span>').join(''); const recent = t.lastUsedAt ? new Date(t.lastUsedAt).toLocaleDateString('ja-JP') : '未使用'; return '<div class="meta">' + (t.favorite ? '<span class="chip star">★お気に入り</span>' : '') + '<span class="chip muted">' + escapeHtml((folder && folder.name) || '未分類') + '</span><span class="chip muted">使用' + (t.useCount || 0) + '回</span><span class="chip muted">' + recent + '</span>' + tags + '</div>'; }
+    function accordionBlock(title, count, bodyHtml) { return '<div class="accordion-item open"><button class="accordion-head" data-folder-toggle><span>' + escapeHtml(title) + ' <small>' + count + '件</small></span><span>−</span></button><div class="accordion-body">' + bodyHtml + '</div></div>'; }
+    function bindAccordionOnly() { document.querySelectorAll('[data-folder-toggle]').forEach(btn => btn.addEventListener('click', () => { const item = btn.closest('.accordion-item'); item.classList.toggle('open'); btn.querySelector('span:last-child').textContent = item.classList.contains('open') ? '−' : '＋'; })); }
+    function sortTemplates(templates, sort) { return [...templates].sort((a,b) => { if (sort === 'favorite') return Number(b.favorite) - Number(a.favorite) || compareRecent(a, b); if (sort === 'recent') return compareRecent(a, b); if (sort === 'popular') return (b.useCount || 0) - (a.useCount || 0) || (a.order || 0) - (b.order || 0); if (sort === 'title') return String(a.title).localeCompare(String(b.title), 'ja'); return (a.order || 0) - (b.order || 0); }); }
+    function compareRecent(a, b) { return (b.lastUsedAt ? new Date(b.lastUsedAt).getTime() : 0) - (a.lastUsedAt ? new Date(a.lastUsedAt).getTime() : 0) || (a.order || 0) - (b.order || 0); }
+    function nextOrder(items) { return items.length ? Math.max(...items.map(i => i.order || 0)) + 1 : 1; }
+    function normalizeOrders(items) { items.sort((a,b) => (a.order || 0) - (b.order || 0)).forEach((item, index) => item.order = index + 1); }
+    function moveItem(items, id, dir) { items.sort((a,b) => a.order - b.order); const index = items.findIndex(i => i.id === id); if (index < 0) return; const target = dir === 'up' ? index - 1 : index + 1; if (target < 0 || target >= items.length) return; [items[index].order, items[target].order] = [items[target].order, items[index].order]; normalizeOrders(items); }
 
-    function deleteFolder(id) {
-      const used = data.promptTemplates.some(t => t.folderId === id);
-      if (used) return toast('使用中のフォルダは削除できません');
-      if (!confirm('このフォルダを削除しますか？')) return;
-      data.folders = data.folders.filter(f => f.id !== id);
-      normalizeOrders(data.folders);
-      persist();
-      openFolderManager();
-    }
-
-    function filteredPromptTemplates(q, folderId, tag) {
-      return data.promptTemplates
-        .filter(t => !folderId || t.folderId === folderId)
-        .filter(t => !tag || (t.tags || []).includes(tag))
-        .filter(t => !q || (t.title + '\n' + t.body + '\n' + (t.tags || []).join(' ')).toLowerCase().includes(q));
-    }
-
-    function getPromptTemplate(id) {
-      return data.promptTemplates.find(t => t.id === id);
-    }
-
-    function parseTags(value) {
-      return String(value || '')
-        .split(/[、,\s]+/)
-        .map(x => x.trim().replace(/^#/, ''))
-        .filter(Boolean)
-        .filter((x, index, arr) => arr.indexOf(x) === index);
-    }
-
-    function getAllPromptTemplateTags() {
-      return [...new Set(data.promptTemplates.flatMap(t => t.tags || []))].sort((a,b) => a.localeCompare(b, 'ja'));
-    }
-
-    function folderOptionsHtml(selectedId = '') {
-      return data.folders.sort((a,b) => a.order - b.order).map(f => '<option value="' + f.id + '" ' + (f.id === selectedId ? 'selected' : '') + '>' + escapeHtml(f.name) + '</option>').join('');
-    }
-
-    function tagOptionsHtml(selectedTag = '') {
-      return getAllPromptTemplateTags().map(tag => '<option value="' + escapeHtml(tag) + '" ' + (tag === selectedTag ? 'selected' : '') + '>#' + escapeHtml(tag) + '</option>').join('');
-    }
-
-    function templateMetaHtml(t) {
-      const folder = data.folders.find(f => f.id === t.folderId);
-      const tags = (t.tags || []).map(tag => '<span class="chip">#' + escapeHtml(tag) + '</span>').join('');
-      const recent = t.lastUsedAt ? new Date(t.lastUsedAt).toLocaleDateString('ja-JP') : '未使用';
-      return '<div class="meta">' +
-        (t.favorite ? '<span class="chip star">★お気に入り</span>' : '') +
-        '<span class="chip muted">' + escapeHtml(folder?.name || '未分類') + '</span>' +
-        '<span class="chip muted">使用' + (t.useCount || 0) + '回</span>' +
-        '<span class="chip muted">' + recent + '</span>' +
-        tags +
-        '</div>';
-    }
-
-    function accordionBlock(title, count, bodyHtml) {
-      return '<div class="accordion-item open"><button class="accordion-head" data-folder-toggle><span>' + escapeHtml(title) + ' <small>' + count + '件</small></span><span>−</span></button><div class="accordion-body">' + bodyHtml + '</div></div>';
-    }
-
-    function bindAccordionOnly() {
-      document.querySelectorAll('[data-folder-toggle]').forEach(btn => btn.addEventListener('click', () => {
-        const item = btn.closest('.accordion-item');
-        item.classList.toggle('open');
-        btn.querySelector('span:last-child').textContent = item.classList.contains('open') ? '−' : '＋';
-      }));
-    }
-
-    function sortTemplates(templates, sort) {
-      return [...templates].sort((a,b) => {
-        if (sort === 'favorite') return Number(b.favorite) - Number(a.favorite) || compareRecent(a, b);
-        if (sort === 'recent') return compareRecent(a, b);
-        if (sort === 'popular') return (b.useCount || 0) - (a.useCount || 0) || (a.order || 0) - (b.order || 0);
-        if (sort === 'title') return String(a.title).localeCompare(String(b.title), 'ja');
-        return (a.order || 0) - (b.order || 0);
-      });
-    }
-
-    function compareRecent(a, b) {
-      return (b.lastUsedAt ? new Date(b.lastUsedAt).getTime() : 0) - (a.lastUsedAt ? new Date(a.lastUsedAt).getTime() : 0) || (a.order || 0) - (b.order || 0);
-    }
-
-    function nextOrder(items) {
-      return items.length ? Math.max(...items.map(i => i.order || 0)) + 1 : 1;
-    }
-
-    function normalizeOrders(items) {
-      items.sort((a,b) => (a.order || 0) - (b.order || 0)).forEach((item, index) => item.order = index + 1);
-    }
-
-    function moveItem(items, id, dir) {
-      items.sort((a,b) => a.order - b.order);
-      const index = items.findIndex(i => i.id === id);
-      if (index < 0) return;
-      const target = dir === 'up' ? index - 1 : index + 1;
-      if (target < 0 || target >= items.length) return;
-      [items[index].order, items[target].order] = [items[target].order, items[index].order];
-      normalizeOrders(items);
-    }
-
-    function copyAll() {
-      navigator.clipboard.writeText(editor.value).then(() => toast('コピーしました')).catch(() => {
-        editor.select();
-        document.execCommand('copy');
-        toast('コピーしました');
-      });
-    }
-
-    function downloadTextFile() {
-      saveCurrentPrompt();
-      const title = (promptTitle.value.trim() || 'prompt').replace(/[\\/:*?"<>|]/g, '_');
-      const blob = new Blob([editor.value], { type: 'text/plain;charset=utf-8' });
-      downloadBlob(blob, title + '.txt');
-      toast('テキストを出力しました');
-    }
-
-    function backupData() {
-      saveCurrentPrompt();
-      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
-      const date = new Date().toISOString().slice(0,10);
-      downloadBlob(blob, 'prompt-manager-backup-' + date + '.json');
-      toast('バックアップを作成しました');
-    }
-
-    function restoreData(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        try {
-          const parsed = JSON.parse(reader.result);
-          if (!parsed.prompts || !parsed.folders) throw new Error('Invalid backup');
-          data = normalizeLoadedData(parsed);
-          persist();
-          loadCurrentPromptToEditor();
-          updatePreview();
-          toast('復元しました');
-        } catch (error) {
-          toast('復元できませんでした');
-        } finally {
-          event.target.value = '';
-        }
-      };
-      reader.readAsText(file);
-    }
-
-    function downloadBlob(blob, filename) {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    }
-
-    function resetSamples() {
-      if (!confirm('サンプルテンプレートを追加し直しますか？現在のプロンプトは残ります。')) return;
-      const currentPrompts = data.prompts;
-      const currentPromptId = data.currentPromptId;
-      data = normalizeLoadedData(clone(defaultData));
-      data.prompts = currentPrompts;
-      data.currentPromptId = currentPromptId;
-      persist();
-      loadCurrentPromptToEditor();
-      toast('サンプルを初期化しました');
-    }
+    function copyAll() { navigator.clipboard.writeText(editor.value).then(() => toast('コピーしました')).catch(() => { editor.select(); document.execCommand('copy'); toast('コピーしました'); }); }
+    function downloadTextFile() { saveCurrentPrompt(); const title = (promptTitle.value.trim() || 'prompt').replace(/[\\/:*?"<>|]/g, '_'); const blob = new Blob([editor.value], { type: 'text/plain;charset=utf-8' }); downloadBlob(blob, title + '.txt'); toast('テキストを出力しました'); }
+    function backupData() { saveCurrentPrompt(); const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' }); const date = new Date().toISOString().slice(0,10); downloadBlob(blob, 'prompt-manager-backup-' + date + '.json'); toast('バックアップを作成しました'); }
+    function restoreData(event) { const file = event.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = () => { try { const parsed = JSON.parse(reader.result); if (!parsed.prompts || !parsed.folders) throw new Error('Invalid backup'); data = normalizeLoadedData(parsed); persist(); loadCurrentPromptToEditor(); setMode('edit'); toast('復元しました'); } catch (error) { toast('復元できませんでした'); } finally { event.target.value = ''; } }; reader.readAsText(file); }
+    function downloadBlob(blob, filename) { const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
+    function resetSamples() { if (!confirm('サンプルテンプレートを追加し直しますか？現在のプロンプトは残ります。')) return; const currentPrompts = data.prompts; const currentPromptId = data.currentPromptId; data = normalizeLoadedData(clone(defaultData)); data.prompts = currentPrompts; data.currentPromptId = currentPromptId; persist(); loadCurrentPromptToEditor(); setMode('edit'); toast('サンプルを初期化しました'); }
   </script>
   <script>
     if ('serviceWorker' in navigator) {
