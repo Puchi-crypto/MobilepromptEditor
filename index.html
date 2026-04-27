@@ -15,22 +15,22 @@
     :root {
       --bg: #0f172a;
       --panel: #111827;
+      --panel2: #1f2937;
       --text: #e5e7eb;
-      --muted: #9ca3af;
-      --border: #334155;
+      --muted: #94a3b8;
+      --border: rgba(148, 163, 184, .18);
       --accent: #38bdf8;
-      --accent-2: #818cf8;
+      --accent2: #818cf8;
       --danger: #fb7185;
-      --shadow: 0 10px 35px rgba(0,0,0,.35);
       --radius: 18px;
-      --bottom-bar-height: 56px;
+      --shadow: 0 16px 45px rgba(0,0,0,.35);
     }
 
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     body {
       margin: 0;
       min-height: 100vh;
-      background: radial-gradient(circle at top left, #1e293b 0, #0f172a 36%, #020617 100%);
+      background: radial-gradient(circle at top left, #1e293b 0, #0f172a 38%, #020617 100%);
       color: var(--text);
       font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       overflow: hidden;
@@ -38,71 +38,105 @@
     button, input, textarea, select { font: inherit; }
     button { border: 0; color: var(--text); cursor: pointer; }
 
-    .app { height: 100vh; height: 100dvh; display: flex; flex-direction: column; position: relative; }
+    .app {
+      height: 100vh;
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+    }
+
     .topbar {
-      height: 56px;
-      padding: env(safe-area-inset-top) 12px 0;
       min-height: calc(56px + env(safe-area-inset-top));
+      padding: env(safe-area-inset-top) 12px 0;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: rgba(15, 23, 42, .85);
+      background: rgba(15, 23, 42, .88);
       backdrop-filter: blur(18px);
-      border-bottom: 1px solid rgba(148, 163, 184, .16);
+      border-bottom: 1px solid var(--border);
+      position: relative;
       z-index: 5;
     }
-    .left-actions, .right-actions { display: flex; align-items: center; gap: 8px; }
+    .top-actions { display: flex; gap: 8px; align-items: center; }
     .icon-btn {
       width: 40px;
       height: 40px;
+      border-radius: 13px;
+      background: rgba(30, 41, 59, .9);
+      border: 1px solid var(--border);
       display: grid;
       place-items: center;
-      border-radius: 13px;
-      background: rgba(30, 41, 59, .85);
-      border: 1px solid rgba(148, 163, 184, .18);
-      transition: .15s ease;
+      font-weight: 700;
     }
-    .icon-btn:active { transform: scale(.96); background: rgba(56, 189, 248, .14); }
     .app-title {
       position: absolute;
       left: 50%;
       transform: translateX(-50%);
       text-align: center;
-      max-width: 45vw;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
       pointer-events: none;
+      max-width: 46vw;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
     }
     .app-title strong { display: block; font-size: 14px; letter-spacing: .04em; }
-    .app-title span { display: block; font-size: 11px; color: var(--muted); margin-top: 1px; }
+    .app-title span { display: block; font-size: 11px; color: var(--muted); }
 
     .main {
       flex: 1;
       min-height: 0;
       display: flex;
       flex-direction: column;
-      padding: 10px 10px calc(var(--bottom-bar-height) + env(safe-area-inset-bottom) + 12px);
+      padding: 10px;
+      gap: 10px;
     }
-    .meta-row { display: flex; gap: 8px; margin-bottom: 10px; }
+    .meta-row { display: flex; gap: 8px; }
     .title-input {
       flex: 1;
       background: rgba(15, 23, 42, .7);
-      border: 1px solid rgba(148, 163, 184, .18);
-      border-radius: 14px;
       color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 14px;
       padding: 12px 13px;
       outline: none;
     }
     .toggle-btn {
-      min-width: 92px;
+      min-width: 88px;
       border-radius: 14px;
-      background: linear-gradient(135deg, rgba(56, 189, 248, .18), rgba(129, 140, 248, .18));
-      border: 1px solid rgba(125, 211, 252, .24);
-      padding: 0 12px;
-      font-size: 13px;
+      background: linear-gradient(135deg, rgba(56,189,248,.18), rgba(129,140,248,.18));
+      border: 1px solid rgba(56,189,248,.25);
       color: #dbeafe;
     }
+
+    .editor-toolbar {
+      padding: 8px;
+      border-radius: 16px;
+      background: rgba(15, 23, 42, .82);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+    }
+    .tool-grid {
+      display: grid;
+      grid-template-columns: repeat(9, minmax(0, 1fr));
+      gap: 6px;
+    }
+    .tool-btn, .mini-tool-btn {
+      min-width: 0;
+      width: 100%;
+      height: 38px;
+      border-radius: 12px;
+      background: rgba(30, 41, 59, .92);
+      border: 1px solid var(--border);
+      color: #e2e8f0;
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 0;
+    }
+    .tool-btn.wide { font-size: clamp(8px, 2.4vw, 11px); letter-spacing: -.04em; }
+    .tool-btn:active, .mini-tool-btn:active, .icon-btn:active { transform: scale(.96); background: rgba(56,189,248,.16); }
+
     .editor-shell {
       flex: 1;
       min-height: 0;
@@ -111,9 +145,8 @@
       background: rgba(2, 6, 23, .72);
       border: 1px solid rgba(148, 163, 184, .16);
       box-shadow: var(--shadow);
-      position: relative;
     }
-    textarea.editor {
+    .editor {
       width: 100%;
       height: 100%;
       resize: none;
@@ -125,58 +158,30 @@
       line-height: 1.65;
       font-size: 15px;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-      tab-size: 2;
     }
-    .preview { height: 100%; overflow: auto; padding: 18px; line-height: 1.7; color: #e5e7eb; word-break: break-word; }
-    .preview h1, .preview h2, .preview h3 { line-height: 1.3; margin: 1em 0 .45em; }
+    .preview {
+      height: 100%;
+      overflow: auto;
+      padding: 18px;
+      line-height: 1.7;
+      word-break: break-word;
+    }
     .preview h1 { font-size: 1.55rem; border-bottom: 1px solid var(--border); padding-bottom: .35em; }
     .preview h2 { font-size: 1.28rem; }
     .preview h3 { font-size: 1.1rem; }
-    .preview p { margin: .7em 0; }
-    .preview code { background: rgba(148, 163, 184, .14); border: 1px solid rgba(148, 163, 184, .12); padding: .12em .35em; border-radius: 7px; color: #bae6fd; }
-    .preview pre { background: rgba(15, 23, 42, .95); border: 1px solid rgba(148, 163, 184, .14); border-radius: 14px; padding: 14px; overflow: auto; }
+    .preview code { background: rgba(148,163,184,.14); border: 1px solid rgba(148,163,184,.12); padding: .12em .35em; border-radius: 7px; color: #bae6fd; }
+    .preview pre { background: rgba(15,23,42,.95); border: 1px solid rgba(148,163,184,.14); border-radius: 14px; padding: 14px; overflow: auto; }
     .preview pre code { background: none; border: 0; padding: 0; }
-    .preview blockquote { border-left: 4px solid var(--accent); margin: 1em 0; padding: .2em 0 .2em 1em; color: #cbd5e1; background: rgba(56, 189, 248, .06); border-radius: 0 12px 12px 0; }
-    .preview ul, .preview ol { padding-left: 1.5em; }
-
-    .bottombar {
-      position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
-      background: rgba(15, 23, 42, .88);
-      backdrop-filter: blur(18px);
-      border-top: 1px solid rgba(148, 163, 184, .16);
-      z-index: 8;
-    }
-    .tool-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
-    .tool-scroll::-webkit-scrollbar { display: none; }
-    .more-tools-btn { display: none; }
-    .tool-btn {
-      flex: 0 0 auto;
-      min-width: 42px;
-      height: 42px;
-      border-radius: 13px;
-      background: rgba(30, 41, 59, .9);
-      border: 1px solid rgba(148, 163, 184, .18);
-      color: #e2e8f0;
-      display: grid;
-      place-items: center;
-      font-weight: 700;
-      font-size: 14px;
-    }
-    .tool-btn.wide { min-width: auto; padding: 0 13px; font-weight: 600; }
-    .tool-btn:active { transform: scale(.96); background: rgba(56, 189, 248, .16); }
+    .preview blockquote { border-left: 4px solid var(--accent); margin: 1em 0; padding: .2em 0 .2em 1em; color: #cbd5e1; background: rgba(56,189,248,.06); border-radius: 0 12px 12px 0; }
 
     .drawer-backdrop, .modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, .42);
-      z-index: 20;
+      background: rgba(0,0,0,.42);
       opacity: 0;
       pointer-events: none;
       transition: .2s ease;
+      z-index: 20;
     }
     .drawer-backdrop.show, .modal-backdrop.show { opacity: 1; pointer-events: auto; }
     .drawer {
@@ -185,8 +190,8 @@
       bottom: 0;
       left: 0;
       width: min(84vw, 340px);
-      background: rgba(15, 23, 42, .98);
-      border-right: 1px solid rgba(148, 163, 184, .18);
+      background: rgba(15,23,42,.98);
+      border-right: 1px solid var(--border);
       z-index: 21;
       transform: translateX(-105%);
       transition: .22s ease;
@@ -202,8 +207,8 @@
       text-align: left;
       padding: 13px 12px;
       border-radius: 14px;
-      background: rgba(30, 41, 59, .68);
-      border: 1px solid rgba(148, 163, 184, .13);
+      background: rgba(30,41,59,.68);
+      border: 1px solid rgba(148,163,184,.13);
       margin-bottom: 8px;
       display: flex;
       align-items: center;
@@ -218,8 +223,8 @@
       right: 10px;
       bottom: calc(10px + env(safe-area-inset-bottom));
       max-height: min(86vh, 760px);
-      background: rgba(15, 23, 42, .98);
-      border: 1px solid rgba(148, 163, 184, .18);
+      background: rgba(15,23,42,.98);
+      border: 1px solid var(--border);
       border-radius: 22px;
       z-index: 25;
       box-shadow: var(--shadow);
@@ -230,7 +235,7 @@
       overflow: hidden;
     }
     .modal.show { transform: translateY(0); }
-    .modal-header { padding: 14px 14px 10px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(148, 163, 184, .14); }
+    .modal-header { padding: 14px 14px 10px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(148,163,184,.14); }
     .modal-header h2 { margin: 0; font-size: 16px; }
     .modal-body { padding: 14px; overflow: auto; }
 
@@ -238,58 +243,51 @@
     .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
     .field input, .field textarea, .field select, .manager-toolbar input, .manager-toolbar select {
       width: 100%;
-      background: rgba(2, 6, 23, .62);
-      border: 1px solid rgba(148, 163, 184, .18);
+      background: rgba(2,6,23,.62);
+      border: 1px solid var(--border);
       border-radius: 13px;
       color: var(--text);
       padding: 11px 12px;
       outline: none;
     }
     .field textarea { min-height: 120px; resize: vertical; line-height: 1.55; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
-    .row { display: flex; gap: 8px; align-items: center; }
+    .manager-toolbar { display: grid; grid-template-columns: 1fr 140px; gap: 8px; margin-bottom: 12px; }
+    .manager-toolbar.three { grid-template-columns: 1fr 120px 120px; }
     .primary-btn, .secondary-btn, .danger-btn { width: 100%; padding: 12px; border-radius: 14px; margin-top: 8px; font-weight: 700; }
-    .primary-btn { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #020617; }
-    .secondary-btn { background: rgba(30, 41, 59, .82); border: 1px solid rgba(148, 163, 184, .18); }
-    .danger-btn { background: rgba(251, 113, 133, .12); border: 1px solid rgba(251, 113, 133, .3); color: #fecdd3; }
+    .primary-btn { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #020617; }
+    .secondary-btn { background: rgba(30,41,59,.82); border: 1px solid var(--border); }
+    .danger-btn { background: rgba(251,113,133,.12); border: 1px solid rgba(251,113,133,.3); color: #fecdd3; }
 
-    .accordion-item { border: 1px solid rgba(148, 163, 184, .15); border-radius: 16px; overflow: hidden; margin-bottom: 10px; background: rgba(30, 41, 59, .45); }
+    .tab-row { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 10px; scrollbar-width: none; }
+    .tab-row::-webkit-scrollbar { display: none; }
+    .tab-btn { flex: 0 0 auto; padding: 9px 11px; border-radius: 999px; background: rgba(30,41,59,.8); border: 1px solid var(--border); color: var(--muted); font-size: 12px; }
+    .tab-btn.active { background: rgba(56,189,248,.16); color: #e0f2fe; border-color: rgba(56,189,248,.3); }
+    .accordion-item { border: 1px solid rgba(148,163,184,.15); border-radius: 16px; overflow: hidden; margin-bottom: 10px; background: rgba(30,41,59,.45); }
     .accordion-head { width: 100%; padding: 13px 12px; background: transparent; display: flex; justify-content: space-between; align-items: center; text-align: left; }
     .accordion-head small { color: var(--muted); }
     .accordion-body { display: none; padding: 0 10px 10px; }
     .accordion-item.open .accordion-body { display: block; }
-    .template-card, .saved-card { background: rgba(2, 6, 23, .5); border: 1px solid rgba(148, 163, 184, .13); border-radius: 14px; padding: 10px; margin-top: 8px; }
-    .template-card h3, .saved-card h3 { margin: 0 0 5px; font-size: 14px; }
-    .template-card p, .saved-card p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.45; white-space: pre-wrap; max-height: 58px; overflow: hidden; }
-    .template-meta { margin-top: 7px; display: flex; flex-wrap: wrap; gap: 5px; }
-    .chip { display: inline-flex; align-items: center; min-height: 22px; padding: 3px 8px; border-radius: 999px; background: rgba(56, 189, 248, .10); border: 1px solid rgba(56, 189, 248, .18); color: #bae6fd; font-size: 11px; line-height: 1; }
-    .chip.muted { background: rgba(148, 163, 184, .10); border-color: rgba(148, 163, 184, .14); color: var(--muted); }
-    .chip.star { background: rgba(250, 204, 21, .10); border-color: rgba(250, 204, 21, .22); color: #fde68a; }
+    .card { background: rgba(2,6,23,.5); border: 1px solid rgba(148,163,184,.13); border-radius: 14px; padding: 10px; margin-top: 8px; }
+    .card h3 { margin: 0 0 5px; font-size: 14px; }
+    .card p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.45; white-space: pre-wrap; max-height: 58px; overflow: hidden; }
+    .meta { margin-top: 7px; display: flex; flex-wrap: wrap; gap: 5px; }
+    .chip { display: inline-flex; align-items: center; min-height: 22px; padding: 3px 8px; border-radius: 999px; background: rgba(56,189,248,.10); border: 1px solid rgba(56,189,248,.18); color: #bae6fd; font-size: 11px; line-height: 1; }
+    .chip.muted { background: rgba(148,163,184,.10); border-color: rgba(148,163,184,.14); color: var(--muted); }
+    .chip.star { background: rgba(250,204,21,.10); border-color: rgba(250,204,21,.22); color: #fde68a; }
     .card-actions { display: flex; gap: 8px; margin-top: 9px; }
-    .mini-btn { flex: 1; padding: 9px; border-radius: 11px; background: rgba(30, 41, 59, .9); border: 1px solid rgba(148, 163, 184, .16); font-size: 12px; }
-    .mini-btn.danger { color: #fecdd3; border-color: rgba(251, 113, 133, .28); background: rgba(251, 113, 133, .1); }
+    .mini-btn { flex: 1; padding: 9px; border-radius: 11px; background: rgba(30,41,59,.9); border: 1px solid var(--border); font-size: 12px; }
+    .mini-btn.danger { color: #fecdd3; border-color: rgba(251,113,133,.28); background: rgba(251,113,133,.1); }
     .empty { color: var(--muted); text-align: center; padding: 30px 12px; line-height: 1.6; font-size: 13px; }
-    .toast { position: fixed; left: 50%; bottom: calc(var(--bottom-bar-height) + env(safe-area-inset-bottom) + 16px); transform: translateX(-50%) translateY(20px); background: rgba(15, 23, 42, .94); color: var(--text); border: 1px solid rgba(148, 163, 184, .18); border-radius: 999px; padding: 10px 14px; font-size: 13px; opacity: 0; pointer-events: none; transition: .2s ease; z-index: 50; box-shadow: var(--shadow); max-width: 84vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .tools-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .muted-note { color: var(--muted); font-size: 12px; line-height: 1.6; margin: 8px 0 12px; }
+    .toast { position: fixed; left: 50%; bottom: calc(14px + env(safe-area-inset-bottom)); transform: translateX(-50%) translateY(20px); background: rgba(15,23,42,.94); color: var(--text); border: 1px solid var(--border); border-radius: 999px; padding: 10px 14px; font-size: 13px; opacity: 0; pointer-events: none; transition: .2s ease; z-index: 50; box-shadow: var(--shadow); max-width: 84vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     .hidden { display: none !important; }
-    .tools-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-    .tools-grid .tool-btn { min-width: 0; width: 100%; }
-    .manager-toolbar { display: grid; grid-template-columns: 1fr 140px; gap: 8px; margin-bottom: 12px; }
-    .manager-toolbar.three { grid-template-columns: 1fr 120px 120px; }
-    .tab-row { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 10px; scrollbar-width: none; }
-    .tab-row::-webkit-scrollbar { display: none; }
-    .tab-btn { flex: 0 0 auto; padding: 9px 11px; border-radius: 999px; background: rgba(30, 41, 59, .8); border: 1px solid rgba(148, 163, 184, .16); color: var(--muted); font-size: 12px; }
-    .tab-btn.active { background: rgba(56, 189, 248, .16); color: #e0f2fe; border-color: rgba(56, 189, 248, .3); }
-    .checkbox-card { display: block; }
-    .checkbox-card input { width: auto; }
-    .muted-note { color: var(--muted); font-size: 12px; line-height: 1.6; margin: 8px 0 12px; }
 
     @media (max-width: 640px) {
-      .bottombar { padding: 6px 6px calc(6px + env(safe-area-inset-bottom)); }
-      .tool-scroll { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 4px; overflow: visible; }
-      .tool-btn { min-width: 0; width: 100%; height: 36px; border-radius: 10px; font-size: clamp(9px, 2.6vw, 12px); padding: 0; }
-      .tool-btn.wide { padding: 0; font-size: clamp(8px, 2.4vw, 11px); letter-spacing: -0.04em; }
-      .advanced-tool { display: none; }
-      .more-tools-btn { display: grid; }
+      .tool-grid { gap: 4px; }
+      .tool-btn { height: 36px; border-radius: 10px; font-size: clamp(9px, 2.6vw, 12px); }
+      .tool-btn.wide { font-size: clamp(8px, 2.3vw, 11px); }
       .card-actions { gap: 6px; }
       .mini-btn { padding: 8px 6px; font-size: 11px; }
     }
@@ -305,53 +303,53 @@
 <body>
   <div class="app">
     <header class="topbar">
-      <div class="left-actions"><button class="icon-btn" id="openDrawerBtn" aria-label="メニュー">☰</button></div>
+      <div class="top-actions"><button class="icon-btn" id="openDrawerBtn">☰</button></div>
       <div class="app-title"><strong>Prompt Manager</strong><span id="saveStatus">保存済み</span></div>
-      <div class="right-actions">
-        <button class="icon-btn" id="newPromptBtn" aria-label="新規作成">✎</button>
-        <button class="icon-btn" id="openInsertTemplateBtn" aria-label="テンプレート挿入">▣</button>
+      <div class="top-actions">
+        <button class="icon-btn" id="newPromptBtn">✎</button>
+        <button class="icon-btn" id="openInsertTemplateBtn">▣</button>
       </div>
     </header>
+
     <main class="main">
       <div class="meta-row">
         <input id="promptTitle" class="title-input" type="text" placeholder="タイトル未設定" />
         <button id="togglePreviewBtn" class="toggle-btn">Preview</button>
       </div>
+
+      <div class="editor-toolbar">
+        <div class="tool-grid">
+          <button class="tool-btn" data-action="undo">↶</button>
+          <button class="tool-btn" data-action="redo">↷</button>
+          <button class="tool-btn" data-action="bold">B</button>
+          <button class="tool-btn" data-action="heading">H</button>
+          <button class="tool-btn" data-action="bullet">≡</button>
+          <button class="tool-btn" data-action="code">&lt;&gt;</button>
+          <button class="tool-btn wide" data-action="copy">コピー</button>
+          <button class="tool-btn wide" data-action="save">保存</button>
+          <button class="tool-btn wide" data-action="moreTools">その他</button>
+        </div>
+      </div>
+
       <section class="editor-shell">
         <textarea id="editor" class="editor" spellcheck="false" placeholder="ここにプロンプトを書きます。Markdown形式で入力できます。"></textarea>
         <div id="preview" class="preview hidden"></div>
       </section>
     </main>
-    <nav class="bottombar" aria-label="編集ツール">
-      <div class="tool-scroll">
-        <button class="tool-btn" data-action="undo">↶</button>
-        <button class="tool-btn" data-action="redo">↷</button>
-        <button class="tool-btn" data-action="bold">B</button>
-        <button class="tool-btn advanced-tool" data-action="italic"><i>I</i></button>
-        <button class="tool-btn" data-action="heading">H</button>
-        <button class="tool-btn" data-action="bullet">≡</button>
-        <button class="tool-btn advanced-tool" data-action="number">1.</button>
-        <button class="tool-btn advanced-tool" data-action="quote">“</button>
-        <button class="tool-btn" data-action="code">&lt;&gt;</button>
-        <button class="tool-btn advanced-tool wide" data-action="variable">{ }</button>
-        <button class="tool-btn advanced-tool wide" data-action="section">区切り</button>
-        <button class="tool-btn wide" data-action="copy">コピー</button>
-        <button class="tool-btn wide" data-action="save">保存</button>
-        <button class="tool-btn wide more-tools-btn" data-action="moreTools">その他</button>
-      </div>
-    </nav>
   </div>
 
   <div id="drawerBackdrop" class="drawer-backdrop"></div>
-  <aside id="drawer" class="drawer" aria-label="メニュー">
+  <aside id="drawer" class="drawer">
     <h2>メニュー</h2>
     <div class="menu-section">Prompt</div>
     <button class="menu-btn" id="openSavedPromptsBtn"><span>保存したプロンプト<small>作成済みプロンプトを開く・削除</small></span><span>›</span></button>
     <button class="menu-btn" id="downloadTxtBtn"><span>テキストファイル出力<small>現在の本文を .txt で保存</small></span><span>↓</span></button>
+
     <div class="menu-section">Templates</div>
     <button class="menu-btn" id="openPromptTemplateManagerBtn"><span>プロンプトテンプレート管理<small>部品・定型文・タグ・お気に入りを管理</small></span><span>›</span></button>
     <button class="menu-btn" id="openFullTemplateManagerBtn"><span>全体テンプレート管理<small>新規作成時の枠組みを管理</small></span><span>›</span></button>
     <button class="menu-btn" id="openFolderManagerBtn"><span>フォルダ管理<small>登録・削除・並び替え</small></span><span>›</span></button>
+
     <div class="menu-section">Data</div>
     <button class="menu-btn" id="backupBtn"><span>バックアップ作成<small>全データをJSONで保存</small></span><span>⬇</span></button>
     <button class="menu-btn" id="restoreBtn"><span>バックアップ復元<small>JSONファイルから復元</small></span><span>⬆</span></button>
@@ -360,15 +358,23 @@
   </aside>
 
   <div id="modalBackdrop" class="modal-backdrop"></div>
-  <section id="modal" class="modal" aria-modal="true" role="dialog">
+  <section id="modal" class="modal">
     <div class="modal-header"><h2 id="modalTitle">Modal</h2><button class="icon-btn" id="closeModalBtn">×</button></div>
     <div id="modalBody" class="modal-body"></div>
   </section>
   <div id="toast" class="toast"></div>
 
   <script>
-    const STORAGE_KEY = 'promptManagerMobile.v3';
-    const OLD_STORAGE_KEYS = ['promptManagerMobile.v2', 'promptManagerMobile.v1'];
+    const STORAGE_KEY = 'promptManagerMobile.v4';
+    const OLD_KEYS = ['promptManagerMobile.v3', 'promptManagerMobile.v2', 'promptManagerMobile.v1'];
+
+    function uid() {
+      return 'id_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+    }
+
+    function clone(obj) {
+      return JSON.parse(JSON.stringify(obj));
+    }
 
     const defaultData = {
       currentPromptId: null,
@@ -385,14 +391,12 @@
     defaultData.promptTemplates = [
       { id: uid(), folderId: defaultData.folders[0].id, title: '入力変数ブロック', body: '<Inputs>\n{$ここに入力内容}\n</Inputs>', tags: ['基本', '変数'], favorite: true, useCount: 0, lastUsedAt: null, order: 1 },
       { id: uid(), folderId: defaultData.folders[0].id, title: '出力形式指定', body: '<Output Format>\n- Markdown\n- 必要に応じて表を使う\n- 最後に確認事項をまとめる\n</Output Format>', tags: ['基本', '出力'], favorite: false, useCount: 0, lastUsedAt: null, order: 2 },
-      { id: uid(), folderId: defaultData.folders[1].id, title: '専門家ロール', body: 'あなたは実務経験20年以上の企業法務・税務に精通した専門家です。制度の背景、根拠、リスク、代替案を含めて説明してください。', tags: ['税務', '法務', 'ロール'], favorite: true, useCount: 0, lastUsedAt: null, order: 3 },
-      { id: uid(), folderId: defaultData.folders[2].id, title: '文章リライト', body: '以下の文章を、読みやすく自然なビジネス文に整えてください。意味は変えず、冗長な表現は整理してください。', tags: ['文章', 'リライト'], favorite: false, useCount: 0, lastUsedAt: null, order: 4 }
+      { id: uid(), folderId: defaultData.folders[1].id, title: '専門家ロール', body: 'あなたは実務経験20年以上の企業法務・税務に精通した専門家です。制度の背景、根拠、リスク、代替案を含めて説明してください。', tags: ['税務', '法務', 'ロール'], favorite: true, useCount: 0, lastUsedAt: null, order: 3 }
     ];
 
     defaultData.fullTemplates = [
       { id: uid(), title: '標準プロンプト', body: '# 目的\n\n\n# 入力\n\n\n# 条件\n- \n- \n\n# 出力形式\n- Markdown\n', order: 1 },
-      { id: uid(), title: '調査・整理用', body: '# 調査テーマ\n\n\n# 前提条件\n\n\n# 調査してほしいこと\n1. \n2. \n3. \n\n# 注意点\n- 根拠を明示する\n- 不明点は不明と書く\n', order: 2 },
-      { id: uid(), title: 'コード作成依頼', body: '# 作りたいもの\n\n\n# 環境\n- HTML / CSS / JavaScript\n\n# ほしい機能\n- \n- \n\n# 注意点\n- 初心者にもわかるように説明\n- 変更がある場合は全体コードを表示\n', order: 3 }
+      { id: uid(), title: '調査・整理用', body: '# 調査テーマ\n\n\n# 前提条件\n\n\n# 調査してほしいこと\n1. \n2. \n3. \n\n# 注意点\n- 根拠を明示する\n- 不明点は不明と書く\n', order: 2 }
     ];
 
     let data = loadData();
@@ -411,7 +415,9 @@
     init();
 
     function init() {
-      if (!data.currentPromptId || !data.prompts.find(p => p.id === data.currentPromptId)) createPrompt('無題のプロンプト', '', false);
+      if (!data.currentPromptId || !data.prompts.find(p => p.id === data.currentPromptId)) {
+        createPrompt('無題のプロンプト', '', false);
+      }
       loadCurrentPromptToEditor();
       bindEvents();
       pushHistory();
@@ -436,18 +442,16 @@
       $('restoreBtn').addEventListener('click', () => { closeDrawer(); $('restoreInput').click(); });
       $('restoreInput').addEventListener('change', restoreData);
       $('resetSampleBtn').addEventListener('click', () => { closeDrawer(); resetSamples(); });
+      document.querySelectorAll('[data-action]').forEach(btn => btn.addEventListener('click', () => handleTool(btn.dataset.action)));
       editor.addEventListener('input', () => { markSaving(); debounceSave(); debounceHistory(); updatePreview(); });
       promptTitle.addEventListener('input', () => { markSaving(); debounceSave(); });
-      document.querySelectorAll('.tool-btn').forEach(btn => btn.addEventListener('click', () => handleTool(btn.dataset.action)));
       window.addEventListener('beforeunload', saveCurrentPrompt);
     }
 
-    function uid() { return 'id_' + Math.random().toString(36).slice(2) + Date.now().toString(36); }
-    function clone(obj) { return JSON.parse(JSON.stringify(obj)); }
-
     function loadData() {
       try {
-        const raw = localStorage.getItem(STORAGE_KEY) || OLD_STORAGE_KEYS.map(k => localStorage.getItem(k)).find(Boolean);
+        const oldRaw = OLD_KEYS.map(key => localStorage.getItem(key)).find(Boolean);
+        const raw = localStorage.getItem(STORAGE_KEY) || oldRaw;
         if (!raw) return normalizeLoadedData(clone(defaultData));
         const parsed = JSON.parse(raw);
         return normalizeLoadedData({
@@ -458,37 +462,58 @@
           promptTemplates: parsed.promptTemplates?.length ? parsed.promptTemplates : clone(defaultData.promptTemplates),
           fullTemplates: parsed.fullTemplates?.length ? parsed.fullTemplates : clone(defaultData.fullTemplates)
         });
-      } catch (e) {
-        console.error(e);
+      } catch (error) {
+        console.error(error);
         return normalizeLoadedData(clone(defaultData));
       }
     }
 
     function normalizeLoadedData(appData) {
-      appData.folders = (appData.folders || []).map((f, index) => ({ id: f.id || uid(), name: f.name || '名称未設定', order: f.order || index + 1 }));
-      appData.promptTemplates = (appData.promptTemplates || []).map((t, index) => ({
-        id: t.id || uid(),
-        folderId: t.folderId || appData.folders[0]?.id,
-        title: t.title || '無題テンプレート',
-        body: t.body || '',
-        tags: Array.isArray(t.tags) ? t.tags : parseTags(t.tags || ''),
-        favorite: Boolean(t.favorite),
-        useCount: Number(t.useCount || 0),
-        lastUsedAt: t.lastUsedAt || null,
-        order: t.order || index + 1
+      appData.folders = (appData.folders || []).map((folder, index) => ({
+        id: folder.id || uid(),
+        name: folder.name || '名称未設定',
+        order: folder.order || index + 1
       }));
-      appData.fullTemplates = (appData.fullTemplates || []).map((t, index) => ({ id: t.id || uid(), title: t.title || '無題テンプレート', body: t.body || '', order: t.order || index + 1 }));
+      appData.promptTemplates = (appData.promptTemplates || []).map((tpl, index) => ({
+        id: tpl.id || uid(),
+        folderId: tpl.folderId || appData.folders[0]?.id,
+        title: tpl.title || '無題テンプレート',
+        body: tpl.body || '',
+        tags: Array.isArray(tpl.tags) ? tpl.tags : parseTags(tpl.tags || ''),
+        favorite: Boolean(tpl.favorite),
+        useCount: Number(tpl.useCount || 0),
+        lastUsedAt: tpl.lastUsedAt || null,
+        order: tpl.order || index + 1
+      }));
+      appData.fullTemplates = (appData.fullTemplates || []).map((tpl, index) => ({
+        id: tpl.id || uid(),
+        title: tpl.title || '無題テンプレート',
+        body: tpl.body || '',
+        order: tpl.order || index + 1
+      }));
       normalizeOrders(appData.folders);
       normalizeOrders(appData.promptTemplates);
       normalizeOrders(appData.fullTemplates);
       return appData;
     }
 
-    function persist() { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); saveStatus.textContent = '保存済み'; }
-    function getCurrentPrompt() { return data.prompts.find(p => p.id === data.currentPromptId); }
+    function persist() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      saveStatus.textContent = '保存済み';
+    }
 
-    function createPrompt(title = '無題のプロンプト', body = '', persistNow = true) {
-      const prompt = { id: uid(), title, body, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    function getCurrentPrompt() {
+      return data.prompts.find(prompt => prompt.id === data.currentPromptId);
+    }
+
+    function createPrompt(title, body, persistNow = true) {
+      const prompt = {
+        id: uid(),
+        title: title || '無題のプロンプト',
+        body: body || '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
       data.prompts.unshift(prompt);
       data.currentPromptId = prompt.id;
       if (persistNow) persist();
@@ -512,9 +537,19 @@
       persist();
     }
 
-    function markSaving() { saveStatus.textContent = '編集中...'; }
-    function debounceSave() { clearTimeout(saveTimer); saveTimer = setTimeout(saveCurrentPrompt, 350); }
-    function debounceHistory() { clearTimeout(historyTimer); historyTimer = setTimeout(pushHistory, 420); }
+    function markSaving() {
+      saveStatus.textContent = '編集中...';
+    }
+
+    function debounceSave() {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(saveCurrentPrompt, 350);
+    }
+
+    function debounceHistory() {
+      clearTimeout(historyTimer);
+      historyTimer = setTimeout(pushHistory, 420);
+    }
 
     function pushHistory() {
       const value = editor.value;
@@ -525,41 +560,81 @@
       }
     }
 
-    function openDrawer() { $('drawerBackdrop').classList.add('show'); $('drawer').classList.add('show'); }
-    function closeDrawer() { $('drawerBackdrop').classList.remove('show'); $('drawer').classList.remove('show'); }
-    function openModal(title, html) { $('modalTitle').textContent = title; $('modalBody').innerHTML = html; $('modalBackdrop').classList.add('show'); $('modal').classList.add('show'); }
-    function closeModal() { $('modalBackdrop').classList.remove('show'); $('modal').classList.remove('show'); setTimeout(() => $('modalBody').innerHTML = '', 220); }
+    function openDrawer() {
+      $('drawerBackdrop').classList.add('show');
+      $('drawer').classList.add('show');
+    }
+
+    function closeDrawer() {
+      $('drawerBackdrop').classList.remove('show');
+      $('drawer').classList.remove('show');
+    }
+
+    function openModal(title, html) {
+      $('modalTitle').textContent = title;
+      $('modalBody').innerHTML = html;
+      $('modalBackdrop').classList.add('show');
+      $('modal').classList.add('show');
+    }
+
+    function closeModal() {
+      $('modalBackdrop').classList.remove('show');
+      $('modal').classList.remove('show');
+      setTimeout(() => { $('modalBody').innerHTML = ''; }, 220);
+    }
 
     function toast(message) {
-      const t = $('toast');
-      t.textContent = message;
-      t.classList.add('show');
-      clearTimeout(t._timer);
-      t._timer = setTimeout(() => t.classList.remove('show'), 1800);
+      const toastEl = $('toast');
+      toastEl.textContent = message;
+      toastEl.classList.add('show');
+      clearTimeout(toastEl._timer);
+      toastEl._timer = setTimeout(() => toastEl.classList.remove('show'), 1800);
     }
 
     function handleTool(action) {
-      if (previewMode && !['copy', 'save'].includes(action)) { toast('編集するにはEdit表示に戻してください'); return; }
-      switch(action) {
+      if (previewMode && !['copy', 'save'].includes(action)) {
+        toast('編集するにはEdit表示に戻してください');
+        return;
+      }
+      switch (action) {
         case 'undo': undo(); break;
         case 'redo': redo(); break;
         case 'bold': wrapSelection('**', '**', '太字'); break;
         case 'italic': wrapSelection('*', '*', '斜体'); break;
         case 'heading': insertLinePrefix('## '); break;
         case 'bullet': insertLinePrefix('- '); break;
-        case 'number': insertNumberList(); break;
+        case 'number': insertLinePrefix('1. '); break;
         case 'quote': insertLinePrefix('> '); break;
         case 'code': wrapSelection('`', '`', 'code'); break;
         case 'variable': insertAtCursor('{$変数名}'); break;
         case 'section': insertAtCursor('\n\n---\n\n'); break;
+        case 'link': insertLink(); break;
+        case 'codeBlock': insertAtCursor('\n```markdown\n\n```\n'); break;
+        case 'checklist': insertAtCursor('- [ ] 項目1\n- [ ] 項目2\n'); break;
+        case 'table': insertAtCursor('| 項目 | 内容 |\n|---|---|\n| 例 | ここに入力 |\n'); break;
+        case 'dateTime': insertDateTime(); break;
         case 'copy': copyAll(); break;
         case 'save': saveCurrentPrompt(); toast('保存しました'); break;
         case 'moreTools': openMoreToolsModal(); break;
       }
     }
 
-    function undo() { if (historyStack.length <= 1) return; redoStack.push(historyStack.pop()); editor.value = historyStack[historyStack.length - 1]; updatePreview(); debounceSave(); }
-    function redo() { if (!redoStack.length) return; const value = redoStack.pop(); historyStack.push(value); editor.value = value; updatePreview(); debounceSave(); }
+    function undo() {
+      if (historyStack.length <= 1) return;
+      redoStack.push(historyStack.pop());
+      editor.value = historyStack[historyStack.length - 1];
+      updatePreview();
+      debounceSave();
+    }
+
+    function redo() {
+      if (!redoStack.length) return;
+      const value = redoStack.pop();
+      historyStack.push(value);
+      editor.value = value;
+      updatePreview();
+      debounceSave();
+    }
 
     function insertAtCursor(text) {
       const start = editor.selectionStart;
@@ -574,8 +649,8 @@
       const start = editor.selectionStart;
       const end = editor.selectionEnd;
       const selected = editor.value.slice(start, end) || placeholder;
-      const next = before + selected + after;
-      editor.value = editor.value.slice(0, start) + next + editor.value.slice(end);
+      const text = before + selected + after;
+      editor.value = editor.value.slice(0, start) + text + editor.value.slice(end);
       editor.focus();
       editor.selectionStart = start + before.length;
       editor.selectionEnd = start + before.length + selected.length;
@@ -592,17 +667,34 @@
       afterEdit();
     }
 
-    function insertNumberList() {
+    function insertLink() {
       const start = editor.selectionStart;
-      const value = editor.value;
-      const lineStart = value.lastIndexOf('\n', start - 1) + 1;
-      editor.value = value.slice(0, lineStart) + '1. ' + value.slice(lineStart);
+      const end = editor.selectionEnd;
+      const selected = editor.value.slice(start, end) || 'リンク文字';
+      const text = '[' + selected + '](https://example.com)';
+      editor.value = editor.value.slice(0, start) + text + editor.value.slice(end);
       editor.focus();
-      editor.selectionStart = editor.selectionEnd = start + 3;
+      editor.selectionStart = start;
+      editor.selectionEnd = start + text.length;
       afterEdit();
     }
 
-    function afterEdit() { markSaving(); pushHistory(); updatePreview(); debounceSave(); }
+    function insertDateTime() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      const hh = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+      insertAtCursor(y + '-' + m + '-' + d + ' ' + hh + ':' + mm);
+    }
+
+    function afterEdit() {
+      markSaving();
+      pushHistory();
+      updatePreview();
+      debounceSave();
+    }
 
     function togglePreview() {
       previewMode = !previewMode;
@@ -630,52 +722,53 @@
 
     function markdownToHtml(md) {
       let html = escapeHtml(md);
-      html = html.replace(/```([\s\S]*?)```/g, (_, code) => `<pre><code>${code.trim()}</code></pre>`);
-      html = html.replace(/^### (.*)$/gm, '<h3>$1</h3>').replace(/^## (.*)$/gm, '<h2>$1</h2>').replace(/^# (.*)$/gm, '<h1>$1</h1>');
-      html = html.replace(/^&gt; (.*)$/gm, '<blockquote>$1</blockquote>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/`([^`]+)`/g, '<code>$1</code>');
-      const lines = html.split('\n');
-      let out = [];
-      let inUl = false;
-      let inOl = false;
-      for (const line of lines) {
-        if (/^- /.test(line)) { if (!inUl) { out.push('<ul>'); inUl = true; } out.push(`<li>${line.replace(/^- /, '')}</li>`); continue; }
-        if (/^\d+\. /.test(line)) { if (!inOl) { out.push('<ol>'); inOl = true; } out.push(`<li>${line.replace(/^\d+\. /, '')}</li>`); continue; }
-        if (inUl) { out.push('</ul>'); inUl = false; }
-        if (inOl) { out.push('</ol>'); inOl = false; }
-        if (line.trim() === '') out.push('');
-        else if (/^<h|^<blockquote|^<pre/.test(line)) out.push(line);
-        else out.push(`<p>${line}</p>`);
-      }
-      if (inUl) out.push('</ul>');
-      if (inOl) out.push('</ol>');
-      return out.join('\n');
+      html = html.replace(/```([\s\S]*?)```/g, function(_, code) { return '<pre><code>' + code.trim() + '</code></pre>'; });
+      html = html.replace(/^### (.*)$/gm, '<h3>$1</h3>');
+      html = html.replace(/^## (.*)$/gm, '<h2>$1</h2>');
+      html = html.replace(/^# (.*)$/gm, '<h1>$1</h1>');
+      html = html.replace(/^&gt; (.*)$/gm, '<blockquote>$1</blockquote>');
+      html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+      html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+      return html.split('\n').map(function(line) {
+        if (!line.trim()) return '';
+        if (/^<h|^<blockquote|^<pre|^<ul|^<ol/.test(line)) return line;
+        if (/^- /.test(line)) return '<p>• ' + line.replace(/^- /, '') + '</p>';
+        if (/^\d+\. /.test(line)) return '<p>' + line + '</p>';
+        return '<p>' + line + '</p>';
+      }).join('\n');
     }
 
-    function updatePreview() { preview.innerHTML = markdownToHtml(editor.value || ''); }
+    function updatePreview() {
+      preview.innerHTML = markdownToHtml(editor.value || '');
+    }
 
     function openMoreToolsModal() {
       openModal('その他の編集ツール', `
         <div class="tools-grid">
-          <button class="tool-btn" data-extra-tool="italic"><i>I</i></button>
-          <button class="tool-btn" data-extra-tool="number">1.</button>
-          <button class="tool-btn" data-extra-tool="quote">“</button>
-          <button class="tool-btn wide" data-extra-tool="variable">{ }</button>
-          <button class="tool-btn wide" data-extra-tool="section">区切り</button>
-          <button class="tool-btn wide" data-extra-tool="bold">太字</button>
-          <button class="tool-btn wide" data-extra-tool="heading">見出し</button>
-          <button class="tool-btn wide" data-extra-tool="bullet">箇条書き</button>
-          <button class="tool-btn wide" data-extra-tool="code">コード</button>
+          <button class="mini-tool-btn" data-extra-tool="italic"><i>I</i></button>
+          <button class="mini-tool-btn" data-extra-tool="number">1.</button>
+          <button class="mini-tool-btn" data-extra-tool="quote">”</button>
+          <button class="mini-tool-btn" data-extra-tool="variable">{ }</button>
+          <button class="mini-tool-btn" data-extra-tool="section">区切り</button>
+          <button class="mini-tool-btn" data-extra-tool="link">リンク</button>
+          <button class="mini-tool-btn" data-extra-tool="codeBlock">コード枠</button>
+          <button class="mini-tool-btn" data-extra-tool="checklist">チェック</button>
+          <button class="mini-tool-btn" data-extra-tool="table">表</button>
+          <button class="mini-tool-btn" data-extra-tool="dateTime">日時</button>
         </div>
       `);
-      document.querySelectorAll('[data-extra-tool]').forEach(btn => btn.addEventListener('click', () => {
-        const action = btn.dataset.extraTool;
-        closeModal();
-        setTimeout(() => handleTool(action), 240);
-      }));
+      document.querySelectorAll('[data-extra-tool]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const action = btn.dataset.extraTool;
+          closeModal();
+          setTimeout(() => handleTool(action), 240);
+        });
+      });
     }
 
     function openNewPromptModal() {
-      const options = data.fullTemplates.sort((a,b) => a.order - b.order).map(t => `<option value="${t.id}">${escapeHtml(t.title)}</option>`).join('');
+      const options = data.fullTemplates.sort((a,b) => a.order - b.order).map(t => '<option value="' + t.id + '">' + escapeHtml(t.title) + '</option>').join('');
       openModal('新規作成', `
         <div class="field"><label>タイトル</label><input id="newPromptTitle" type="text" placeholder="新しいプロンプト" /></div>
         <div class="field"><label>全体テンプレート</label><select id="newFullTemplate"><option value="">空白で作成</option>${options}</select></div>
@@ -723,7 +816,9 @@
           render();
         });
       });
-      ['insertTemplateSearch', 'insertFolderFilter', 'insertTagFilter'].forEach(id => $(id).addEventListener(id === 'insertTemplateSearch' ? 'input' : 'change', render));
+      ['insertTemplateSearch', 'insertFolderFilter', 'insertTagFilter'].forEach(id => {
+        $(id).addEventListener(id === 'insertTemplateSearch' ? 'input' : 'change', render);
+      });
       render();
     }
 
@@ -731,7 +826,7 @@
       const q = ($('insertTemplateSearch')?.value || '').trim().toLowerCase();
       const folderId = $('insertFolderFilter')?.value || '';
       const tag = $('insertTagFilter')?.value || '';
-      let templates = filteredPromptTemplates(q, folderId, tag);
+      const templates = filteredPromptTemplates(q, folderId, tag);
       let html = '';
       if (view === 'favorites') html = sortTemplates(templates.filter(t => t.favorite), 'recent').map(insertTemplateCard).join('');
       else if (view === 'recent') html = sortTemplates(templates.filter(t => t.lastUsedAt), 'recent').map(insertTemplateCard).join('');
@@ -742,7 +837,7 @@
         html = tags.map(tagName => {
           const list = sortTemplates(templates.filter(t => (t.tags || []).includes(tagName)), 'recent');
           if (!list.length) return '';
-          return accordionBlock(`#${tagName}`, list.length, list.map(insertTemplateCard).join(''));
+          return accordionBlock('#' + tagName, list.length, list.map(insertTemplateCard).join(''));
         }).join('');
       } else {
         html = [...data.folders].sort((a,b) => a.order - b.order).filter(f => !folderId || f.id === folderId).map(folder => {
@@ -758,7 +853,7 @@
 
     function insertTemplateCard(t) {
       return `
-        <div class="template-card">
+        <div class="card">
           <h3>${t.favorite ? '★ ' : ''}${escapeHtml(t.title)}</h3>
           <p>${escapeHtml(t.body)}</p>
           ${templateMetaHtml(t)}
@@ -793,7 +888,7 @@
 
     function openSavedPromptsModal() {
       const html = data.prompts.map(p => `
-        <div class="saved-card">
+        <div class="card">
           <h3>${escapeHtml(p.title)}</h3>
           <p>${escapeHtml(p.body || '本文なし')}</p>
           <div class="card-actions">
@@ -900,7 +995,7 @@
       const folderId = $('templateFolderFilter')?.value || '';
       const tag = $('templateTagFilter')?.value || '';
       const sort = $('templateSort')?.value || 'folder';
-      let templates = filteredPromptTemplates(q, folderId, tag);
+      const templates = filteredPromptTemplates(q, folderId, tag);
       let html = '';
       if (sort === 'folder') {
         html = [...data.folders].sort((a,b) => a.order - b.order).filter(f => !folderId || f.id === folderId).map(folder => {
@@ -918,7 +1013,7 @@
 
     function managerTemplateCard(t) {
       return `
-        <div class="template-card">
+        <div class="card">
           <h3>${t.favorite ? '★ ' : ''}${escapeHtml(t.title)}</h3>
           <p>${escapeHtml(t.body)}</p>
           ${templateMetaHtml(t)}
@@ -977,7 +1072,7 @@
     function duplicatePromptTemplate(id) {
       const t = getPromptTemplate(id);
       if (!t) return;
-      data.promptTemplates.push({ ...clone(t), id: uid(), title: `${t.title} のコピー`, favorite: false, useCount: 0, lastUsedAt: null, order: nextOrder(data.promptTemplates) });
+      data.promptTemplates.push({ ...clone(t), id: uid(), title: t.title + ' のコピー', favorite: false, useCount: 0, lastUsedAt: null, order: nextOrder(data.promptTemplates) });
       persist();
       renderPromptTemplateManagerList();
       toast('複製しました');
@@ -1003,8 +1098,8 @@
         const q = ($('moveTemplateSearch')?.value || '').trim().toLowerCase();
         const list = filteredPromptTemplates(q, '', '');
         $('moveTemplateList').innerHTML = list.map(t => `
-          <label class="template-card checkbox-card">
-            <div class="row"><input type="checkbox" data-move-check="${t.id}"><div><h3>${escapeHtml(t.title)}</h3>${templateMetaHtml(t)}</div></div>
+          <label class="card">
+            <div style="display:flex;gap:8px;align-items:flex-start;"><input type="checkbox" data-move-check="${t.id}" style="width:auto;margin-top:4px;"><div><h3>${escapeHtml(t.title)}</h3>${templateMetaHtml(t)}</div></div>
           </label>
         `).join('') || '<div class="empty">該当するテンプレートはありません。</div>';
       };
@@ -1016,14 +1111,14 @@
         data.promptTemplates.forEach(t => { if (ids.includes(t.id)) t.folderId = target; });
         persist();
         openPromptTemplateManager();
-        toast(`${ids.length}件を移動しました`);
+        toast(ids.length + '件を移動しました');
       });
       render();
     }
 
     function openFullTemplateManager() {
       const list = data.fullTemplates.sort((a,b) => a.order - b.order).map(t => `
-        <div class="template-card"><h3>${escapeHtml(t.title)}</h3><p>${escapeHtml(t.body)}</p>
+        <div class="card"><h3>${escapeHtml(t.title)}</h3><p>${escapeHtml(t.body)}</p>
           <div class="card-actions"><button class="mini-btn" data-edit-full="${t.id}">編集</button><button class="mini-btn" data-move-full="${t.id}" data-dir="up">上へ</button><button class="mini-btn" data-move-full="${t.id}" data-dir="down">下へ</button><button class="mini-btn danger" data-delete-full="${t.id}">削除</button></div>
         </div>`).join('');
       openModal('全体テンプレート管理', `
@@ -1076,7 +1171,7 @@
 
     function openFolderManager() {
       const list = data.folders.sort((a,b) => a.order - b.order).map(f => `
-        <div class="template-card"><h3>${escapeHtml(f.name)}</h3><p>${data.promptTemplates.filter(t => t.folderId === f.id).length}件のテンプレート</p>
+        <div class="card"><h3>${escapeHtml(f.name)}</h3><p>${data.promptTemplates.filter(t => t.folderId === f.id).length}件のテンプレート</p>
           <div class="card-actions"><button class="mini-btn" data-edit-folder="${f.id}">編集</button><button class="mini-btn" data-move-folder="${f.id}" data-dir="up">上へ</button><button class="mini-btn" data-move-folder="${f.id}" data-dir="down">下へ</button><button class="mini-btn danger" data-delete-folder="${f.id}">削除</button></div>
         </div>`).join('');
       openModal('フォルダ管理', `
@@ -1131,30 +1226,48 @@
       return data.promptTemplates
         .filter(t => !folderId || t.folderId === folderId)
         .filter(t => !tag || (t.tags || []).includes(tag))
-        .filter(t => !q || `${t.title}\n${t.body}\n${(t.tags || []).join(' ')}`.toLowerCase().includes(q));
+        .filter(t => !q || (t.title + '\n' + t.body + '\n' + (t.tags || []).join(' ')).toLowerCase().includes(q));
     }
 
-    function getPromptTemplate(id) { return data.promptTemplates.find(t => t.id === id); }
+    function getPromptTemplate(id) {
+      return data.promptTemplates.find(t => t.id === id);
+    }
+
     function parseTags(value) {
       return String(value || '')
         .split(/[、,\s]+/)
         .map(x => x.trim().replace(/^#/, ''))
         .filter(Boolean)
-        .filter((x, i, arr) => arr.indexOf(x) === i);
+        .filter((x, index, arr) => arr.indexOf(x) === index);
     }
-    function getAllPromptTemplateTags() { return [...new Set(data.promptTemplates.flatMap(t => t.tags || []))].sort((a,b) => a.localeCompare(b, 'ja')); }
-    function folderOptionsHtml(selectedId = '') { return data.folders.sort((a,b) => a.order - b.order).map(f => `<option value="${f.id}" ${f.id === selectedId ? 'selected' : ''}>${escapeHtml(f.name)}</option>`).join(''); }
-    function tagOptionsHtml(selectedTag = '') { return getAllPromptTemplateTags().map(tag => `<option value="${escapeHtml(tag)}" ${tag === selectedTag ? 'selected' : ''}>#${escapeHtml(tag)}</option>`).join(''); }
+
+    function getAllPromptTemplateTags() {
+      return [...new Set(data.promptTemplates.flatMap(t => t.tags || []))].sort((a,b) => a.localeCompare(b, 'ja'));
+    }
+
+    function folderOptionsHtml(selectedId = '') {
+      return data.folders.sort((a,b) => a.order - b.order).map(f => '<option value="' + f.id + '" ' + (f.id === selectedId ? 'selected' : '') + '>' + escapeHtml(f.name) + '</option>').join('');
+    }
+
+    function tagOptionsHtml(selectedTag = '') {
+      return getAllPromptTemplateTags().map(tag => '<option value="' + escapeHtml(tag) + '" ' + (tag === selectedTag ? 'selected' : '') + '>#' + escapeHtml(tag) + '</option>').join('');
+    }
 
     function templateMetaHtml(t) {
       const folder = data.folders.find(f => f.id === t.folderId);
-      const tags = (t.tags || []).map(tag => `<span class="chip">#${escapeHtml(tag)}</span>`).join('');
+      const tags = (t.tags || []).map(tag => '<span class="chip">#' + escapeHtml(tag) + '</span>').join('');
       const recent = t.lastUsedAt ? new Date(t.lastUsedAt).toLocaleDateString('ja-JP') : '未使用';
-      return `<div class="template-meta">${t.favorite ? '<span class="chip star">★お気に入り</span>' : ''}<span class="chip muted">${escapeHtml(folder?.name || '未分類')}</span><span class="chip muted">使用${t.useCount || 0}回</span><span class="chip muted">${recent}</span>${tags}</div>`;
+      return '<div class="meta">' +
+        (t.favorite ? '<span class="chip star">★お気に入り</span>' : '') +
+        '<span class="chip muted">' + escapeHtml(folder?.name || '未分類') + '</span>' +
+        '<span class="chip muted">使用' + (t.useCount || 0) + '回</span>' +
+        '<span class="chip muted">' + recent + '</span>' +
+        tags +
+        '</div>';
     }
 
     function accordionBlock(title, count, bodyHtml) {
-      return `<div class="accordion-item open"><button class="accordion-head" data-folder-toggle><span>${escapeHtml(title)} <small>${count}件</small></span><span>−</span></button><div class="accordion-body">${bodyHtml}</div></div>`;
+      return '<div class="accordion-item open"><button class="accordion-head" data-folder-toggle><span>' + escapeHtml(title) + ' <small>' + count + '件</small></span><span>−</span></button><div class="accordion-body">' + bodyHtml + '</div></div>';
     }
 
     function bindAccordionOnly() {
@@ -1179,8 +1292,14 @@
       return (b.lastUsedAt ? new Date(b.lastUsedAt).getTime() : 0) - (a.lastUsedAt ? new Date(a.lastUsedAt).getTime() : 0) || (a.order || 0) - (b.order || 0);
     }
 
-    function nextOrder(items) { return items.length ? Math.max(...items.map(i => i.order || 0)) + 1 : 1; }
-    function normalizeOrders(items) { items.sort((a,b) => (a.order || 0) - (b.order || 0)).forEach((item, index) => item.order = index + 1); }
+    function nextOrder(items) {
+      return items.length ? Math.max(...items.map(i => i.order || 0)) + 1 : 1;
+    }
+
+    function normalizeOrders(items) {
+      items.sort((a,b) => (a.order || 0) - (b.order || 0)).forEach((item, index) => item.order = index + 1);
+    }
+
     function moveItem(items, id, dir) {
       items.sort((a,b) => a.order - b.order);
       const index = items.findIndex(i => i.id === id);
@@ -1203,7 +1322,7 @@
       saveCurrentPrompt();
       const title = (promptTitle.value.trim() || 'prompt').replace(/[\\/:*?"<>|]/g, '_');
       const blob = new Blob([editor.value], { type: 'text/plain;charset=utf-8' });
-      downloadBlob(blob, `${title}.txt`);
+      downloadBlob(blob, title + '.txt');
       toast('テキストを出力しました');
     }
 
@@ -1211,7 +1330,7 @@
       saveCurrentPrompt();
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' });
       const date = new Date().toISOString().slice(0,10);
-      downloadBlob(blob, `prompt-manager-backup-${date}.json`);
+      downloadBlob(blob, 'prompt-manager-backup-' + date + '.json');
       toast('バックアップを作成しました');
     }
 
@@ -1228,7 +1347,7 @@
           loadCurrentPromptToEditor();
           updatePreview();
           toast('復元しました');
-        } catch (e) {
+        } catch (error) {
           toast('復元できませんでした');
         } finally {
           event.target.value = '';
@@ -1260,16 +1379,15 @@
       toast('サンプルを初期化しました');
     }
   </script>
-</body>
-<script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js')
-        .then(() => console.log('Service Worker registered'))
-        .catch(error => console.log('Service Worker registration failed:', error));
-    });
-  }
+  <script>
+   if ('serviceWorker' in navigator) {
+     window.addEventListener('load', () => {
+       navigator.serviceWorker.register('./sw.js')
+         .then(() => console.log('Service Worker registered'))
+         .catch(error => console.log('Service Worker registration failed:', error));
+     });
+   }
 </script>
+</body>
 </html>
 
-    
