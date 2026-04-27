@@ -251,6 +251,82 @@
     .cv-string { color: #fdba74; }
     .cv-comment { color: #4ade80; }
 
+
+
+    /* ==== テンプレート挿入画面：すっきり表示 ==== */
+    #insertTemplateList .accordion-item {
+      background: rgba(14, 116, 144, .12);
+      border-color: rgba(56, 189, 248, .24);
+    }
+    #insertTemplateList .accordion-head {
+      background: rgba(15, 23, 42, .54);
+      border-bottom: 1px solid rgba(56, 189, 248, .10);
+    }
+    #insertTemplateList .accordion-head span:first-child {
+      color: #bae6fd;
+      font-weight: 800;
+    }
+    #insertTemplateList .accordion-body {
+      background: rgba(2, 6, 23, .18);
+      padding: 8px;
+    }
+    .insert-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 10px 10px 12px;
+      margin-top: 8px;
+      background: rgba(15, 23, 42, .72);
+      border: 1px solid rgba(148, 163, 184, .14);
+      border-radius: 13px;
+    }
+    .insert-card h3 {
+      margin: 0;
+      flex: 1;
+      min-width: 0;
+      font-size: 14px;
+      font-weight: 750;
+      color: #e2e8f0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .insert-actions {
+      display: flex;
+      flex: 0 0 auto;
+      gap: 6px;
+      align-items: center;
+    }
+    .insert-icon-btn {
+      width: 36px;
+      height: 34px;
+      border-radius: 11px;
+      background: rgba(30, 41, 59, .92);
+      border: 1px solid rgba(148, 163, 184, .16);
+      color: #dbeafe;
+      display: grid;
+      place-items: center;
+      font-size: 15px;
+      font-weight: 800;
+    }
+    .insert-icon-btn.insert {
+      background: rgba(56, 189, 248, .14);
+      border-color: rgba(56, 189, 248, .28);
+      color: #bae6fd;
+    }
+    .insert-icon-btn.favorite {
+      color: rgba(250, 204, 21, .55);
+    }
+    .insert-icon-btn.favorite.active {
+      background: rgba(250, 204, 21, .12);
+      border-color: rgba(250, 204, 21, .28);
+      color: #fde68a;
+    }
+    .insert-icon-btn:active {
+      transform: scale(.96);
+    }
+
     .drawer-backdrop, .modal-backdrop {
       position: fixed;
       inset: 0;
@@ -874,8 +950,8 @@
       });
     }
     function openInsertTemplateModal() {
-      openModal('テンプレート挿入', `<div class="tab-row"><button class="tab-btn active" data-insert-view="favorites">お気に入り</button><button class="tab-btn" data-insert-view="recent">最近使った</button><button class="tab-btn" data-insert-view="popular">使用回数順</button><button class="tab-btn" data-insert-view="folders">フォルダ別</button><button class="tab-btn" data-insert-view="tags">タグ別</button><button class="tab-btn" data-insert-view="all">すべて</button></div><div class="manager-toolbar three"><input id="insertTemplateSearch" placeholder="テンプレート検索" /><select id="insertFolderFilter"><option value="">全フォルダ</option>${folderOptionsHtml()}</select><select id="insertTagFilter"><option value="">全タグ</option>${tagOptionsHtml()}</select></div><div id="insertTemplateList"></div>`);
-      let view = 'favorites';
+      openModal('テンプレート挿入', `<div class="tab-row"><button class="tab-btn active" data-insert-view="all">すべて</button><button class="tab-btn" data-insert-view="favorites">お気に入り</button><button class="tab-btn" data-insert-view="recent">最近使った</button><button class="tab-btn" data-insert-view="popular">使用回数順</button><button class="tab-btn" data-insert-view="tags">タグ別</button></div><div class="manager-toolbar three"><input id="insertTemplateSearch" placeholder="テンプレート検索" /><select id="insertFolderFilter"><option value="">全フォルダ</option>${folderOptionsHtml()}</select><select id="insertTagFilter"><option value="">全タグ</option>${tagOptionsHtml()}</select></div><div id="insertTemplateList"></div>`);
+      let view = 'all';
       const render = () => renderInsertTemplateList(view);
       document.querySelectorAll('[data-insert-view]').forEach(btn => btn.addEventListener('click', () => { view = btn.dataset.insertView; document.querySelectorAll('[data-insert-view]').forEach(b => b.classList.remove('active')); btn.classList.add('active'); render(); }));
       ['insertTemplateSearch', 'insertFolderFilter', 'insertTagFilter'].forEach(id => { $(id).addEventListener(id === 'insertTemplateSearch' ? 'input' : 'change', render); });
@@ -887,21 +963,23 @@
       const tag = $('insertTagFilter') ? $('insertTagFilter').value : '';
       const templates = filteredPromptTemplates(q, folderId, tag);
       let html = '';
-      if (view === 'favorites') html = sortTemplates(templates.filter(t => t.favorite), 'recent').map(insertTemplateCard).join('');
+      if (view === 'all') {
+        html = [...data.folders].sort((a,b) => a.order - b.order).filter(f => !folderId || f.id === folderId).map(folder => {
+          const list = sortTemplates(templates.filter(t => t.folderId === folder.id), 'order');
+          return list.length ? accordionBlock(folder.name, list.length, list.map(insertTemplateCard).join('')) : '';
+        }).join('');
+      } else if (view === 'favorites') html = sortTemplates(templates.filter(t => t.favorite), 'recent').map(insertTemplateCard).join('');
       else if (view === 'recent') html = sortTemplates(templates.filter(t => t.lastUsedAt), 'recent').map(insertTemplateCard).join('');
       else if (view === 'popular') html = sortTemplates(templates, 'popular').map(insertTemplateCard).join('');
-      else if (view === 'all') html = sortTemplates(templates, 'title').map(insertTemplateCard).join('');
       else if (view === 'tags') {
         const tags = tag ? [tag] : getAllPromptTemplateTags();
         html = tags.map(tagName => { const list = sortTemplates(templates.filter(t => (t.tags || []).includes(tagName)), 'recent'); return list.length ? accordionBlock('#' + tagName, list.length, list.map(insertTemplateCard).join('')) : ''; }).join('');
-      } else {
-        html = [...data.folders].sort((a,b) => a.order - b.order).filter(f => !folderId || f.id === folderId).map(folder => { const list = sortTemplates(templates.filter(t => t.folderId === folder.id), 'order'); return list.length ? accordionBlock(folder.name, list.length, list.map(insertTemplateCard).join('')) : ''; }).join('');
       }
       $('insertTemplateList').innerHTML = html || '<div class="empty">該当するテンプレートはありません。</div>';
       bindAccordionOnly();
       bindInsertTemplateActions(() => renderInsertTemplateList(view));
     }
-    function insertTemplateCard(t) { return `<div class="card"><h3>${t.favorite ? '★ ' : ''}${escapeHtml(t.title)}</h3><p>${escapeHtml(t.body)}</p>${templateMetaHtml(t)}<div class="card-actions"><button class="mini-btn" data-insert-template="${t.id}">挿入</button><button class="mini-btn" data-toggle-favorite="${t.id}">${t.favorite ? '★解除' : '☆お気に入り'}</button></div></div>`; }
+    function insertTemplateCard(t) { return `<div class="insert-card"><h3 title="${escapeHtml(t.title)}">${escapeHtml(t.title)}</h3><div class="insert-actions"><button class="insert-icon-btn insert" data-insert-template="${t.id}" title="挿入" aria-label="挿入">＋</button><button class="insert-icon-btn favorite ${t.favorite ? 'active' : ''}" data-toggle-favorite="${t.id}" title="お気に入り" aria-label="お気に入り">★</button></div></div>`; }
     function bindInsertTemplateActions(render) {
       document.querySelectorAll('[data-insert-template]').forEach(btn => btn.addEventListener('click', () => {
         const template = data.promptTemplates.find(t => t.id === btn.dataset.insertTemplate);
