@@ -136,6 +136,11 @@
     }
     .tool-btn.wide { font-size: clamp(8px, 2.4vw, 11px); letter-spacing: -.04em; }
     .tool-btn:active, .mini-tool-btn:active, .icon-btn:active { transform: scale(.96); background: rgba(56,189,248,.16); }
+    .danger-tool {
+      color: #fecdd3;
+      border-color: rgba(251, 113, 133, .35);
+      background: rgba(251, 113, 133, .12);
+    }
 
     .editor-shell {
       flex: 1;
@@ -326,7 +331,7 @@
           <button class="tool-btn" data-action="bullet">≡</button>
           <button class="tool-btn" data-action="code">&lt;&gt;</button>
           <button class="tool-btn wide" data-action="copy">コピー</button>
-          <button class="tool-btn wide" data-action="save">保存</button>
+          <button class="tool-btn wide danger-tool" data-action="clearText">削除</button>
           <button class="tool-btn wide" data-action="moreTools">その他</button>
         </div>
       </div>
@@ -614,6 +619,7 @@
         case 'table': insertAtCursor('| 項目 | 内容 |\n|---|---|\n| 例 | ここに入力 |\n'); break;
         case 'dateTime': insertDateTime(); break;
         case 'copy': copyAll(); break;
+        case 'clearText': clearEditorText(); break;
         case 'save': saveCurrentPrompt(); toast('保存しました'); break;
         case 'moreTools': openMoreToolsModal(); break;
       }
@@ -689,6 +695,20 @@
       insertAtCursor(y + '-' + m + '-' + d + ' ' + hh + ':' + mm);
     }
 
+    function clearEditorText() {
+      if (!editor.value.trim()) {
+        toast('本文はすでに空です');
+        return;
+      }
+      if (!confirm('現在入力している本文を削除しますか？')) {
+        return;
+      }
+      editor.value = '';
+      editor.focus();
+      afterEdit();
+      toast('本文を削除しました');
+    }
+
     function afterEdit() {
       markSaving();
       pushHistory();
@@ -756,6 +776,7 @@
           <button class="mini-tool-btn" data-extra-tool="checklist">チェック</button>
           <button class="mini-tool-btn" data-extra-tool="table">表</button>
           <button class="mini-tool-btn" data-extra-tool="dateTime">日時</button>
+          <button class="mini-tool-btn" data-extra-tool="save">保存</button>
         </div>
       `);
       document.querySelectorAll('[data-extra-tool]').forEach(btn => {
@@ -1380,14 +1401,13 @@
     }
   </script>
   <script>
-   if ('serviceWorker' in navigator) {
-     window.addEventListener('load', () => {
-       navigator.serviceWorker.register('./sw.js')
-         .then(() => console.log('Service Worker registered'))
-         .catch(error => console.log('Service Worker registration failed:', error));
-     });
-   }
-</script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(() => console.log('Service Worker registered'))
+          .catch(error => console.log('Service Worker registration failed:', error));
+      });
+    }
+  </script>
 </body>
 </html>
-
