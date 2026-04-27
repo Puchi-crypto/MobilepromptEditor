@@ -186,9 +186,12 @@
       line-height: var(--line-height);
       border: 0;
       box-sizing: border-box;
-      white-space: pre-wrap;
-      overflow-wrap: break-word;
-      word-break: break-word;
+      
+      /* ★ 修正ポイント：自動折り返しを無効にし横スクロールさせることで行番号ズレを解消 */
+      white-space: pre;
+      overflow-wrap: normal;
+      word-break: normal;
+      
       tab-size: 4;
       -moz-tab-size: 4;
     }
@@ -197,15 +200,10 @@
       top: 0;
       left: 0;
       pointer-events: none;
-      color: #dbeafe; /* デフォルト文字色 */
-      overflow-y: auto;
-      overflow-x: hidden;
+      color: #dbeafe;
+      overflow: hidden; /* textarea側にスクロールを任せる */
       z-index: 1;
     }
-    /* ハイライト層のスクロールバーは隠す（textarea側で操作） */
-    .editor-highlight::-webkit-scrollbar { display: none; }
-    .editor-highlight { scrollbar-width: none; -ms-overflow-style: none; }
-
     .editor {
       position: absolute;
       top: 0;
@@ -213,11 +211,10 @@
       resize: none;
       outline: none;
       background: transparent;
-      color: transparent !important; /* 入力文字自体は透明にして背面のハイライトを見せる */
-      caret-color: #dbeafe;          /* カーソルの色は見えるようにする */
+      color: transparent !important;
+      caret-color: #dbeafe;
       z-index: 2;
-      overflow-y: auto;
-      overflow-x: hidden;
+      overflow: auto;
       -webkit-appearance: none;
       appearance: none;
     }
@@ -519,7 +516,8 @@
         markSaving(); debounceSave(); debounceHistory(); 
         updateEditorLineNumbers(); updateEditorHighlight(); 
       });
-      editor.addEventListener('scroll', syncEditorScroll);
+      // スクロール同期を確実に行う
+      editor.addEventListener('scroll', syncEditorScroll, { passive: true });
       promptTitle.addEventListener('input', () => { markSaving(); debounceSave(); });
       window.addEventListener('beforeunload', saveCurrentPrompt);
     }
@@ -619,6 +617,7 @@
       updateEditorHighlight();
       markSaving();
       debounceSave();
+      setTimeout(syncEditorScroll, 10);
     }
     function redo() {
       clearTimeout(historyTimer);
@@ -635,6 +634,7 @@
       updateEditorHighlight();
       markSaving();
       debounceSave();
+      setTimeout(syncEditorScroll, 10);
     }
 
     function updateEditorLineNumbers() {
@@ -819,8 +819,16 @@
       afterEdit();
       toast('本文を削除しました');
     }
+    
+    // 文字挿入・操作のあとの共通処理
     function afterEdit() { 
-      markSaving(); pushHistory(); updateEditorLineNumbers(); updateEditorHighlight(); debounceSave(); 
+      markSaving(); 
+      pushHistory(); 
+      updateEditorLineNumbers(); 
+      updateEditorHighlight(); 
+      debounceSave(); 
+      // 挿入後のブラウザのキャレット自動スクロールに追従させるための微小遅延同期
+      setTimeout(syncEditorScroll, 10);
     }
 
     function escapeHtml(str) { return String(str).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;').replaceAll("'", '&#039;'); }
