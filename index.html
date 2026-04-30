@@ -23,7 +23,7 @@
       --shadow: 0 16px 45px rgba(0,0,0,.35);
       --radius: 18px;
       --line-height: 1.65;
-      --editor-font-size: 15px;
+      --editor-font-size: 14px;
     }
 
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -151,9 +151,10 @@
       height: 100%;
       min-height: 0;
       display: grid;
-      grid-template-columns: 44px 1fr;
+      grid-template-columns: 1fr;
     }
     .editor-lines {
+      display: none;
       height: 100%;
       overflow: hidden;
       padding: 16px 8px 16px 4px;
@@ -187,10 +188,10 @@
       border: 0;
       box-sizing: border-box;
       
-      /* ★ 修正ポイント：自動折り返しを無効にし横スクロールさせることで行番号ズレを解消 */
-      white-space: pre;
-      overflow-wrap: normal;
-      word-break: normal;
+      /* 自動折り返し表示。横スクロールは使わない */
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      word-break: break-word;
       
       tab-size: 4;
       -moz-tab-size: 4;
@@ -214,7 +215,8 @@
       color: transparent !important;
       caret-color: #dbeafe;
       z-index: 2;
-      overflow: auto;
+      overflow-y: auto;
+      overflow-x: hidden;
       -webkit-appearance: none;
       appearance: none;
     }
@@ -1117,6 +1119,6 @@
           .catch(error => console.log('Service Worker registration failed:', error));
       });
     }
-  </script>
+</script>
 </body>
 </html>
